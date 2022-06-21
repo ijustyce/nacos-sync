@@ -2,7 +2,7 @@
 
     <configuration scan="true" scanPeriod="10 seconds">
         <springProperty name="logPath"  scope="context" source="nacosSync.logs.path" defaultValue="${nacosSync.home}/logs"/>
-        <property name="LOG_HOME" value="${logPath}" />
+        <property name="LOG_HOME" value="./logs" />
     <appender name="FILEINFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/nacosSync.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
