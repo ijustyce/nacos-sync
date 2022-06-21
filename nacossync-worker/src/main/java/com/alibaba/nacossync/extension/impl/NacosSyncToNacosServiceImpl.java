@@ -123,16 +123,16 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
             allSyncTaskMap.remove(taskDO.getTaskId());
 
             // 删除目标集群中同步的实例列表
-            List<Instance> sourceInstances = sourceNamingService
+            List<Instance> sourceInstances = destNamingService
                 .getAllInstances(taskDO.getServiceName(), getGroupNameOrDefault(taskDO.getGroupName()),
                     new ArrayList<>(), false);
             for (Instance instance : sourceInstances) {
-                if (needSync(instance.getMetadata())) {
+//                if (needSync(instance.getMetadata())) {
                     destNamingService
                         .deregisterInstance(taskDO.getServiceName(), getGroupNameOrDefault(taskDO.getGroupName()),
                             instance.getIp(),
                             instance.getPort());
-                }
+//                }
             }
         } catch (Exception e) {
             log.error("delete task from nacos to nacos was failed, taskId:{}", taskDO.getTaskId(), e);
@@ -155,7 +155,7 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
             this.listenerMap.putIfAbsent(taskId, event -> {
                 if (event instanceof NamingEvent) {
                     try {
-                        doSync(taskId, taskDO, sourceNamingService, destNamingService);
+                        doSync(taskId, taskDO, sourceNamingService, destNamingService, true);
                     } catch (Exception e) {
                         log.error("event process fail, taskId:{}", taskId, e);
                         metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
@@ -173,8 +173,13 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
     }
 
     private void doSync(String taskId, TaskDO taskDO, NamingService sourceNamingService,
-        NamingService destNamingService) throws NacosException {
-        if (syncTaskTap.putIfAbsent(taskId, 1) != null) {
+                        NamingService destNamingService) throws NacosException {
+        doSync(taskId, taskDO, sourceNamingService, destNamingService, false);
+    }
+
+    private void doSync(String taskId, TaskDO taskDO, NamingService sourceNamingService,
+        NamingService destNamingService, boolean force) throws NacosException {
+        if (!force && syncTaskTap.putIfAbsent(taskId, 1) != null) {
             log.info("任务Id:{}上一个同步任务尚未结束", taskId);
             return;
         }
