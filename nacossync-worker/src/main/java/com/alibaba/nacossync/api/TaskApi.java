@@ -12,6 +12,8 @@
  */
 package com.alibaba.nacossync.api;
 
+import com.alibaba.nacossync.dao.ClusterAccessService;
+import com.alibaba.nacossync.pojo.model.ClusterDO;
 import com.alibaba.nacossync.pojo.request.TaskAddRequest;
 import com.alibaba.nacossync.pojo.request.TaskDeleteInBatchRequest;
 import com.alibaba.nacossync.pojo.request.TaskDeleteRequest;
@@ -30,10 +32,8 @@ import com.alibaba.nacossync.template.processor.TaskDetailProcessor;
 import com.alibaba.nacossync.template.processor.TaskListQueryProcessor;
 import com.alibaba.nacossync.template.processor.TaskUpdateProcessor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author NacosSync
@@ -55,15 +55,19 @@ public class TaskApi {
 
     private final TaskDetailProcessor taskDetailProcessor;
 
+    private final ClusterAccessService clusterAccessService;
+
     public TaskApi(TaskUpdateProcessor taskUpdateProcessor, TaskAddProcessor taskAddProcessor,
-        TaskDeleteProcessor taskDeleteProcessor, TaskDeleteInBatchProcessor taskDeleteInBatchProcessor,
-        TaskListQueryProcessor taskListQueryProcessor, TaskDetailProcessor taskDetailProcessor) {
+                   TaskDeleteProcessor taskDeleteProcessor, TaskDeleteInBatchProcessor taskDeleteInBatchProcessor,
+                   TaskListQueryProcessor taskListQueryProcessor, TaskDetailProcessor taskDetailProcessor,
+                   ClusterAccessService clusterAccessService) {
         this.taskUpdateProcessor = taskUpdateProcessor;
         this.taskAddProcessor = taskAddProcessor;
         this.taskDeleteProcessor = taskDeleteProcessor;
         this.taskDeleteInBatchProcessor = taskDeleteInBatchProcessor;
         this.taskListQueryProcessor = taskListQueryProcessor;
         this.taskDetailProcessor = taskDetailProcessor;
+        this.clusterAccessService = clusterAccessService;
     }
 
     @RequestMapping(path = "/v1/task/list", method = RequestMethod.GET)
@@ -104,5 +108,18 @@ public class TaskApi {
     public BaseResult updateTask(@RequestBody TaskUpdateRequest taskUpdateRequest) {
 
         return SkyWalkerTemplate.run(taskUpdateProcessor, taskUpdateRequest, new BaseResult());
+    }
+
+    @GetMapping("/v2/listCluster")
+    public Page<ClusterDO> listCluster() {
+        return clusterAccessService.findPageNoCriteria(1, 10000);
+    }
+
+    @GetMapping("/v2/syncNacos")
+    public BaseResult sync(String fromClusterId, String toClusterId) {
+        ClusterDO destCluster = clusterAccessService.findByClusterId(toClusterId);
+        ClusterDO sourceCluster = clusterAccessService.findByClusterId(fromClusterId);
+
+        return null;
     }
 }
