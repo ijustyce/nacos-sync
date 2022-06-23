@@ -140,7 +140,7 @@ public class ToolsService {
         }
         String urlPath = "/nacos/v1/ns/catalog/services?hasIpCount=true&withInstances=false&pageNo=1&pageSize=1000000" +
                 "&serviceNameParam=&groupNameParam=&namespaceId=" + clusterDO.getNamespace();
-        String result = httpService.httpGet(hosts.get(0) + urlPath);
+        String result = httpService.httpGet("http://" + hosts.get(0) + urlPath);
         if (ObjectUtils.isEmpty(result)) {
             return null;
         }
