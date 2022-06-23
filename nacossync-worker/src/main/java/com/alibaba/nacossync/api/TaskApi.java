@@ -113,15 +113,4 @@ public class TaskApi {
 
         return SkyWalkerTemplate.run(taskUpdateProcessor, taskUpdateRequest, new BaseResult());
     }
-
-    @GetMapping("/v2/listCluster")
-    public Page<ClusterDO> listCluster() {
-        return clusterAccessService.findPageNoCriteria(0, 10000);
-    }
-
-    @GetMapping("/v2/syncNacos")
-    public BaseResult sync(String sourceClusterId, String destClusterId) {
-        toolsService.tryToStartAsync(sourceClusterId, destClusterId);
-        return new BaseResult();
-    }
 }
