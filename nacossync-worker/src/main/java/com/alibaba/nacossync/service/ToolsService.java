@@ -90,14 +90,83 @@ public class ToolsService {
 
         log.info("sources task count {}, destTasks count {}", sourceTasks.size(), destTasks.size());
 
+        syncToDest(sourceTasks, destTasks);
+        syncIfUpdate(sourceTasks, destTasks);
+    }
+
+    /**
+     * 将更新后的服务同步到源集群，解决源集群的 provider 更新后连接到了目标集群，
+     * 但是源集群的 consumer 连接的依旧是源集群，导致找不到该 provider
+     *
+     * @param sourceTasks 原集群服务信息
+     * @param destTasks   目标集群服务信息
+     */
+    private void syncIfUpdate(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
+        if (ObjectUtils.isEmpty(destTasks)) {
+            return;
+        }
+        String sourceNacosId = destTasks.get(0).getSourceClusterId();
+        String destNacosId = destTasks.get(0).getDestClusterId();
+
+        List<TaskDO> result = new ArrayList<>();
+
+        Iterable<TaskDO> allTask = this.taskAccessService.findAll();
+        allTask.forEach(it -> {
+            //  只查找同步到目标集群的，反向同步的过滤掉
+            if (it.getSourceClusterId().equals(sourceNacosId) && it.getDestClusterId().equals(destNacosId)) {
+                TaskDO sourceTask = findByName(sourceTasks, it.getServiceName());
+                if (sourceTask == null) {
+                    result.add(syncToSourceTask(it));
+                } else {
+                    TaskDO destTask = findByName(destTasks, it.getServiceName());
+                    if (destTask != null && destTask.getIpCount() > sourceTask.getIpCount()) {
+                        result.add(syncToSourceTask(it));
+                    }
+                }
+            }
+        });
+
+        result.forEach(this.taskAccessService::addTask);
+    }
+
+    /**
+     * 将本来要同步到目标集群的服务，同步到源集群，解决 provider 更新后，连接到新集群时，原集群 consumer 找不到 provider 的情况
+     *
+     * @param taskDO 原同步任务
+     * @return 反向同步的任务
+     */
+    private TaskDO syncToSourceTask(TaskDO taskDO) {
+        //  注意，generateTaskId 函数中的 sourceClusterId 为 taskDO 中的 destClusterId
+        String sourceClusterId = taskDO.getDestClusterId();
+        String destClusterId = taskDO.getSourceClusterId();
+
+        String taskId = SkyWalkerUtil.generateTaskId(taskDO.getServiceName(), taskDO.getGroupName(),
+                sourceClusterId, destClusterId);
+        taskDO.setTaskId(taskId);
+
+        taskDO.setId(null);
+        taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
+        taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
+        taskDO.setSourceClusterId(sourceClusterId);
+        taskDO.setDestClusterId(destClusterId);
+        return taskDO;
+    }
+
+    /**
+     * 将原集群上除了 consumer 外的服务同步到目标集群
+     *
+     * @param sourceTasks 原集群服务信息
+     * @param destTasks   目标集群服务信息
+     */
+    private void syncToDest(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
         ArrayList<TaskDO> toAddTasks = diffTasks(sourceTasks, destTasks);
         if (ObjectUtils.isEmpty(toAddTasks)) {
-            log.info("end asyncNacosServices, no task added.");
+            log.info("end syncToDest, no task added.");
             return;
         }
 
         toAddTasks.forEach(taskAccessService::addTask);
-        log.info("end asyncNacosServices, add task count {}", toAddTasks.size());
+        log.info("end syncToDest, add task count {}", toAddTasks.size());
     }
 
     private ArrayList<TaskDO> diffTasks(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
@@ -114,24 +183,25 @@ public class ToolsService {
             if (serviceName.startsWith("consumers:")) {
                 continue;
             }
-            boolean isExists = isExists(destTasks, serviceName);
-            if (!isExists) {
+            //  如果目标集群不存在该服务则添加！
+            TaskDO destTask = findByName(destTasks, serviceName);
+            if (destTask == null) {
                 result.add(task);
             }
         }
         return result;
     }
 
-    private boolean isExists(ArrayList<TaskDO> destTasks, String servicesName) {
-        if (ObjectUtils.isEmpty(destTasks)) {
-            return false;
+    private TaskDO findByName(ArrayList<TaskDO> taskList, String servicesName) {
+        if (ObjectUtils.isEmpty(taskList)) {
+            return null;
         }
-        for (TaskDO taskDO : destTasks) {
+        for (TaskDO taskDO : taskList) {
             if (servicesName.equals(taskDO.getServiceName())) {
-                return true;
+                return taskDO;
             }
         }
-        return false;
+        return null;
     }
 
     private String serviceInfo(ClusterDO clusterDO) {
@@ -167,6 +237,7 @@ public class ToolsService {
         for (JsonNode jsonNode : arrayNode) {
             String serviceName = jsonNode.get("name").asText();
             String groupName = jsonNode.get("groupName").asText();
+            int count = jsonNode.get("ipCount").asInt();
             if (ObjectUtils.isEmpty(serviceName)) {
                 String error = jsonNode.toPrettyString();
                 throw new RuntimeException("serviceName is empty: " + error);
@@ -183,13 +254,11 @@ public class ToolsService {
                 taskDO.setDestClusterId(destClusterId);
                 taskDO.setVersion("");
                 taskDO.setNameSpace("");
-                taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
                 taskDO.setWorkerIp(SkyWalkerUtil.getLocalIp());
-                taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
-            } else {
-                taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
-                taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
             }
+            taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
+            taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
+            taskDO.setIpCount(count);
             tasks.add(taskDO);
         }
         return tasks;
