@@ -24,6 +24,7 @@ import com.alibaba.nacossync.pojo.result.BaseResult;
 import com.alibaba.nacossync.pojo.result.TaskAddResult;
 import com.alibaba.nacossync.pojo.result.TaskDetailQueryResult;
 import com.alibaba.nacossync.pojo.result.TaskListQueryResult;
+import com.alibaba.nacossync.service.ToolsService;
 import com.alibaba.nacossync.template.SkyWalkerTemplate;
 import com.alibaba.nacossync.template.processor.TaskAddProcessor;
 import com.alibaba.nacossync.template.processor.TaskDeleteInBatchProcessor;
@@ -57,10 +58,12 @@ public class TaskApi {
 
     private final ClusterAccessService clusterAccessService;
 
+    private final ToolsService toolsService;
+
     public TaskApi(TaskUpdateProcessor taskUpdateProcessor, TaskAddProcessor taskAddProcessor,
                    TaskDeleteProcessor taskDeleteProcessor, TaskDeleteInBatchProcessor taskDeleteInBatchProcessor,
                    TaskListQueryProcessor taskListQueryProcessor, TaskDetailProcessor taskDetailProcessor,
-                   ClusterAccessService clusterAccessService) {
+                   ClusterAccessService clusterAccessService, ToolsService toolsService) {
         this.taskUpdateProcessor = taskUpdateProcessor;
         this.taskAddProcessor = taskAddProcessor;
         this.taskDeleteProcessor = taskDeleteProcessor;
@@ -68,6 +71,7 @@ public class TaskApi {
         this.taskListQueryProcessor = taskListQueryProcessor;
         this.taskDetailProcessor = taskDetailProcessor;
         this.clusterAccessService = clusterAccessService;
+        this.toolsService = toolsService;
     }
 
     @RequestMapping(path = "/v1/task/list", method = RequestMethod.GET)
@@ -116,10 +120,8 @@ public class TaskApi {
     }
 
     @GetMapping("/v2/syncNacos")
-    public BaseResult sync(String fromClusterId, String toClusterId) {
-        ClusterDO destCluster = clusterAccessService.findByClusterId(toClusterId);
-        ClusterDO sourceCluster = clusterAccessService.findByClusterId(fromClusterId);
-
-        return null;
+    public BaseResult sync(String sourceClusterId, String destClusterId) {
+        toolsService.tryToStartAsync(sourceClusterId, destClusterId);
+        return new BaseResult();
     }
 }
