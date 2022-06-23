@@ -10,6 +10,7 @@ import com.alibaba.nacossync.util.SkyWalkerUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -159,7 +160,8 @@ public class ToolsService {
 
         ArrayList<TaskDO> tasks = new ArrayList<>();
         ObjectMapper objectMapper = new ObjectMapper();
-        ArrayNode arrayNode = (ArrayNode) objectMapper.readTree(json);
+        ObjectNode objectNode = (ObjectNode) objectMapper.readTree(json);
+        ArrayNode arrayNode = (ArrayNode) objectNode.get("serviceList");
 
         for (JsonNode jsonNode : arrayNode) {
             String serviceName = jsonNode.get("serviceName").asText();
