@@ -88,6 +88,8 @@ public class ToolsService {
         ArrayList<TaskDO> sourceTasks = servicesToTask(sourceServices, sourceClusterId, destClusterId);
         ArrayList<TaskDO> destTasks = servicesToTask(destServices, sourceClusterId, destClusterId);
 
+        log.info("sources task count {}, destTasks count {}", sourceTasks.size(), destTasks.size());
+
         ArrayList<TaskDO> toAddTasks = diffTasks(sourceTasks, destTasks);
         if (ObjectUtils.isEmpty(toAddTasks)) {
             log.info("end asyncNacosServices, no task added.");
@@ -101,10 +103,6 @@ public class ToolsService {
     private ArrayList<TaskDO> diffTasks(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
         if (ObjectUtils.isEmpty(sourceTasks)) {
             return null;
-        }
-
-        if (ObjectUtils.isEmpty(destTasks)) {
-            return sourceTasks;
         }
 
         ArrayList<TaskDO> result = new ArrayList<>();
@@ -125,6 +123,9 @@ public class ToolsService {
     }
 
     private boolean isExists(ArrayList<TaskDO> destTasks, String servicesName) {
+        if (ObjectUtils.isEmpty(destTasks)) {
+            return false;
+        }
         for (TaskDO taskDO : destTasks) {
             if (servicesName.equals(taskDO.getServiceName())) {
                 return true;
