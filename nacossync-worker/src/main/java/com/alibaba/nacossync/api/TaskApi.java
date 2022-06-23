@@ -116,7 +116,7 @@ public class TaskApi {
 
     @GetMapping("/v2/listCluster")
     public Page<ClusterDO> listCluster() {
-        return clusterAccessService.findPageNoCriteria(1, 10000);
+        return clusterAccessService.findPageNoCriteria(0, 10000);
     }
 
     @GetMapping("/v2/syncNacos")
