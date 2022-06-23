@@ -164,7 +164,7 @@ public class ToolsService {
         ArrayNode arrayNode = (ArrayNode) objectNode.get("serviceList");
 
         for (JsonNode jsonNode : arrayNode) {
-            String serviceName = jsonNode.get("serviceName").asText();
+            String serviceName = jsonNode.get("name").asText();
             String groupName = jsonNode.get("groupName").asText();
             if (ObjectUtils.isEmpty(serviceName)) {
                 String error = jsonNode.toPrettyString();
