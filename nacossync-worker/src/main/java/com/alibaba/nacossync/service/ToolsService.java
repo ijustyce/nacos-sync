@@ -92,6 +92,55 @@ public class ToolsService {
 
         syncToDest(sourceTasks, destTasks);
         syncIfUpdate(sourceTasks, destTasks);
+        syncToSource(sourceTasks, destTasks);
+    }
+
+    /**
+     * 将 consumer 在原集群，但是 provider 不在原集群而是在目标集群的，将目标集群的 provider 同步到原集群
+     */
+    private void syncToSource(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
+        ArrayList<TaskDO> list = findNoProvider(sourceTasks, destTasks);
+        if (ObjectUtils.isEmpty(list)) {
+            return;
+        }
+
+        list.forEach(this.taskAccessService::addTask);
+    }
+
+    private ArrayList<TaskDO> findNoProvider(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
+        if (ObjectUtils.isEmpty(sourceTasks)) {
+            return null;
+        }
+        if (ObjectUtils.isEmpty(destTasks)) {
+            return null;
+        }
+
+        ArrayList<TaskDO> result = new ArrayList<>();
+        for (TaskDO taskDO : sourceTasks) {
+            //  如果不是 consumer 则继续
+            if (!taskDO.getServiceName().startsWith("consumers:")) {
+                continue;
+            }
+
+            String providerName = taskDO.getServiceName().replace("consumers:", "providers:");
+            TaskDO provider = findByName(sourceTasks, providerName);
+            //  如果原集群存在 provider 则跳过
+            if (provider != null) {
+                continue;
+            }
+
+            TaskDO destProvider = findByName(destTasks, providerName);
+            //  如果目标集群也没该服务，则跳过
+            if (destProvider == null) {
+                continue;
+            }
+
+            TaskDO toAddTask = syncToSourceTask(destProvider);
+            if (toAddTask != null) {
+                result.add(toAddTask);
+            }
+        }
+        return result;
     }
 
     /**
@@ -116,11 +165,17 @@ public class ToolsService {
             if (it.getSourceClusterId().equals(sourceNacosId) && it.getDestClusterId().equals(destNacosId)) {
                 TaskDO sourceTask = findByName(sourceTasks, it.getServiceName());
                 if (sourceTask == null) {
-                    result.add(syncToSourceTask(it));
+                    TaskDO tmp = syncToSourceTask(it);
+                    if (tmp != null) {
+                        result.add(tmp);
+                    }
                 } else {
                     TaskDO destTask = findByName(destTasks, it.getServiceName());
                     if (destTask != null && destTask.getIpCount() > sourceTask.getIpCount()) {
-                        result.add(syncToSourceTask(it));
+                        TaskDO tmp = syncToSourceTask(it);
+                        if (tmp != null) {
+                            result.add(tmp);
+                        }
                     }
                 }
             }
@@ -136,20 +191,19 @@ public class ToolsService {
      * @return 反向同步的任务
      */
     private TaskDO syncToSourceTask(TaskDO taskDO) {
+        if (ObjectUtils.isEmpty(taskDO)) {
+            return null;
+        }
         //  注意，generateTaskId 函数中的 sourceClusterId 为 taskDO 中的 destClusterId
         String sourceClusterId = taskDO.getDestClusterId();
         String destClusterId = taskDO.getSourceClusterId();
 
-        String taskId = SkyWalkerUtil.generateTaskId(taskDO.getServiceName(), taskDO.getGroupName(),
-                sourceClusterId, destClusterId);
-        taskDO.setTaskId(taskId);
-
-        taskDO.setId(null);
-        taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
-        taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
-        taskDO.setSourceClusterId(sourceClusterId);
-        taskDO.setDestClusterId(destClusterId);
-        return taskDO;
+        try {
+            return generateTask(taskDO.getServiceName(), taskDO.getGroupName(), sourceClusterId, destClusterId);
+        } catch (Exception e) {
+            log.error("error while generate task", e);
+        }
+        return null;
     }
 
     /**
@@ -243,24 +297,29 @@ public class ToolsService {
                 throw new RuntimeException("serviceName is empty: " + error);
             }
 
-            String taskId = SkyWalkerUtil.generateTaskId(serviceName, groupName, sourceClusterId, destClusterId);
-            TaskDO taskDO = taskAccessService.findByTaskId(taskId);
-            if (taskDO == null) {
-                taskDO = new TaskDO();
-                taskDO.setServiceName(serviceName);
-                taskDO.setGroupName(groupName);
-                taskDO.setTaskId(taskId);
-                taskDO.setSourceClusterId(sourceClusterId);
-                taskDO.setDestClusterId(destClusterId);
-                taskDO.setVersion("");
-                taskDO.setNameSpace("");
-                taskDO.setWorkerIp(SkyWalkerUtil.getLocalIp());
-            }
-            taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
-            taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
+            TaskDO taskDO = generateTask(serviceName, groupName, sourceClusterId, destClusterId);
             taskDO.setIpCount(count);
             tasks.add(taskDO);
         }
         return tasks;
+    }
+
+    private TaskDO generateTask(String serviceName, String groupName, String sourceClusterId, String destClusterId) throws Exception {
+        String taskId = SkyWalkerUtil.generateTaskId(serviceName, groupName, sourceClusterId, destClusterId);
+        TaskDO taskDO = taskAccessService.findByTaskId(taskId);
+        if (taskDO == null) {
+            taskDO = new TaskDO();
+            taskDO.setServiceName(serviceName);
+            taskDO.setGroupName(groupName);
+            taskDO.setTaskId(taskId);
+            taskDO.setSourceClusterId(sourceClusterId);
+            taskDO.setDestClusterId(destClusterId);
+            taskDO.setVersion("");
+            taskDO.setNameSpace("");
+            taskDO.setWorkerIp(SkyWalkerUtil.getLocalIp());
+        }
+        taskDO.setTaskStatus(TaskStatusEnum.SYNC.getCode());
+        taskDO.setOperationId(SkyWalkerUtil.generateOperationId());
+        return taskDO;
     }
 }
