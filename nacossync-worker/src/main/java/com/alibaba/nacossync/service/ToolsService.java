@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,6 +38,7 @@ public class ToolsService {
     private final ScheduledExecutorService scheduledService;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean withInstance = new AtomicBoolean(true);
 
     public ToolsService(HttpService httpService, TaskAccessService taskAccessService,
                         ClusterAccessService clusterAccessService,
@@ -89,6 +91,9 @@ public class ToolsService {
         ArrayList<TaskDO> destTasks = servicesToTask(destServices, sourceClusterId, destClusterId);
 
         log.info("sources task count {}, destTasks count {}", sourceTasks.size(), destTasks.size());
+        if (!ObjectUtils.isEmpty(sourceTasks) && !ObjectUtils.isEmpty(destTasks)) {
+            withInstance.set(false);
+        }
 
         syncToDest(sourceTasks, destTasks);
         syncIfUpdate(sourceTasks, destTasks);
@@ -99,7 +104,7 @@ public class ToolsService {
      * 将 consumer 在原集群，但是 provider 不在原集群而是在目标集群的，将目标集群的 provider 同步到原集群
      */
     private void syncToSource(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
-        ArrayList<TaskDO> list = findNoProvider(sourceTasks, destTasks);
+        ArrayList<TaskDO> list = diffDestProvider(sourceTasks, destTasks);
         if (ObjectUtils.isEmpty(list)) {
             return;
         }
@@ -107,7 +112,14 @@ public class ToolsService {
         list.forEach(this.taskAccessService::addTask);
     }
 
-    private ArrayList<TaskDO> findNoProvider(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
+    /**
+     * 查找在 目标集群，但不在原集群的 非 consumer 服务！
+     *
+     * @param sourceTasks 原集群任务
+     * @param destTasks   目标集群任务
+     * @return 在目标集群，但不在原集群的 非 consumer 服务
+     */
+    private ArrayList<TaskDO> diffDestProvider(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
         if (ObjectUtils.isEmpty(sourceTasks)) {
             return null;
         }
@@ -116,26 +128,19 @@ public class ToolsService {
         }
 
         ArrayList<TaskDO> result = new ArrayList<>();
-        for (TaskDO taskDO : sourceTasks) {
-            //  如果不是 consumer 则继续
-            if (!taskDO.getServiceName().startsWith("consumers:")) {
+        for (TaskDO taskDO : destTasks) {
+            //  如果是 consumer 则跳过
+            if (taskDO.getServiceName().startsWith("consumers:")) {
                 continue;
             }
 
-            String providerName = taskDO.getServiceName().replace("consumers:", "providers:");
-            TaskDO provider = findByName(sourceTasks, providerName);
-            //  如果原集群存在 provider 则跳过
+            TaskDO provider = findByName(sourceTasks, taskDO.getServiceName());
+            //  如果原集群存在该 provider 则跳过
             if (provider != null) {
                 continue;
             }
 
-            TaskDO destProvider = findByName(destTasks, providerName);
-            //  如果目标集群也没该服务，则跳过
-            if (destProvider == null) {
-                continue;
-            }
-
-            TaskDO toAddTask = syncToSourceTask(destProvider);
+            TaskDO toAddTask = syncToSourceTask(taskDO);
             if (toAddTask != null) {
                 result.add(toAddTask);
             }
@@ -152,6 +157,10 @@ public class ToolsService {
      */
     private void syncIfUpdate(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
         if (ObjectUtils.isEmpty(destTasks)) {
+            return;
+        }
+        //  如果为第一次，则不需要考虑更新的情况
+        if (withInstance.get()) {
             return;
         }
         String sourceNacosId = destTasks.get(0).getSourceClusterId();
@@ -171,7 +180,8 @@ public class ToolsService {
                     }
                 } else {
                     TaskDO destTask = findByName(destTasks, it.getServiceName());
-                    if (destTask != null && destTask.getIpCount() > sourceTask.getIpCount()) {
+                    if (destTask != null && destTask.getIpCount() > sourceTask.getIpCount()
+                            && destTask.getIpCount() > 0 && sourceTask.getIpCount() > 0) {
                         TaskDO tmp = syncToSourceTask(it);
                         if (tmp != null) {
                             result.add(tmp);
@@ -264,8 +274,9 @@ public class ToolsService {
             log.error("hosts is empty {}", clusterDO);
             return null;
         }
-        String urlPath = "/nacos/v1/ns/catalog/services?hasIpCount=true&withInstances=false&pageNo=1&pageSize=1000000" +
-                "&serviceNameParam=&groupNameParam=&namespaceId=" + clusterDO.getNamespace();
+        String urlPath = "/nacos/v1/ns/catalog/services?hasIpCount=true&pageNo=1&pageSize=1000000" +
+                "&serviceNameParam=&groupNameParam=&namespaceId=" + clusterDO.getNamespace() + "&withInstances="
+                + withInstance.get();
         String result = httpService.httpGet("http://" + hosts.get(0) + urlPath);
         if (ObjectUtils.isEmpty(result)) {
             return null;
@@ -285,23 +296,62 @@ public class ToolsService {
 
         ArrayList<TaskDO> tasks = new ArrayList<>();
         ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode objectNode = (ObjectNode) objectMapper.readTree(json);
-        ArrayNode arrayNode = (ArrayNode) objectNode.get("serviceList");
+        ArrayNode arrayNode;
+        if (withInstance.get()) {
+            arrayNode = (ArrayNode) objectMapper.readTree(json);
+        } else {
+            ObjectNode objectNode = (ObjectNode) objectMapper.readTree(json);
+            arrayNode = (ArrayNode) objectNode.get("serviceList");
+        }
 
         for (JsonNode jsonNode : arrayNode) {
-            String serviceName = jsonNode.get("name").asText();
-            String groupName = jsonNode.get("groupName").asText();
-            int count = jsonNode.get("ipCount").asInt();
+            if (isFromSync(jsonNode)) {
+                continue;
+            }
+
+            String serviceName;
+            int ipCount = 0;
+            if (jsonNode.has("name")) {
+                serviceName = jsonNode.get("name").asText();
+                ipCount = jsonNode.get("ipCount").asInt();
+            } else {
+                serviceName = jsonNode.get("serviceName").asText();
+            }
             if (ObjectUtils.isEmpty(serviceName)) {
                 String error = jsonNode.toPrettyString();
                 throw new RuntimeException("serviceName is empty: " + error);
             }
 
+            String groupName = jsonNode.get("groupName").asText();
+
             TaskDO taskDO = generateTask(serviceName, groupName, sourceClusterId, destClusterId);
-            taskDO.setIpCount(count);
+            taskDO.setIpCount(ipCount);
             tasks.add(taskDO);
         }
         return tasks;
+    }
+
+    private boolean isFromSync(JsonNode jsonNode) {
+        if (!jsonNode.has("clusterMap")) {
+            return false;
+        }
+        JsonNode clusterMap = jsonNode.get("clusterMap");
+        Iterator<JsonNode> elements = clusterMap.elements();
+        while (elements.hasNext()) {
+            JsonNode cluster = elements.next();
+            ArrayNode hosts = (ArrayNode) cluster.get("hosts");
+            for (JsonNode host : hosts) {
+                //  如果是从 nacos 同步的则返回 true
+                JsonNode metadata = host.get("metadata");
+                if (metadata != null) {
+                    JsonNode syncSource = metadata.get("syncSource");
+                    if (syncSource != null && "NACOS".equals(syncSource.asText())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private TaskDO generateTask(String serviceName, String groupName, String sourceClusterId, String destClusterId) throws Exception {

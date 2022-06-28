@@ -75,6 +75,9 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
+//        addCluster("xjp-preview", "54.251.229.7:6802", "preview");
+//        addCluster("xjp-preview-v3", "52.76.18.150:6802", "preview");
+
         addCluster("fs-test", "ehlxm.nacos.duowan.com:6801", "develop");
         addCluster("nacos-pod", "10.218.18.224:6802", "develop");
 

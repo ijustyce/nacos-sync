@@ -90,7 +90,7 @@ public class TaskAccessService implements PageQueryService<TaskDO> {
     @Override
     public Page<TaskDO> findPageNoCriteria(Integer pageNum, Integer size) {
 
-        Pageable pageable = PageRequest.of(pageNum, size, Sort.Direction.DESC, "id");
+        Pageable pageable = PageRequest.of(pageNum, size, Sort.Direction.DESC, "sourceClusterId");
 
         return taskRepository.findAll(pageable);
     }
