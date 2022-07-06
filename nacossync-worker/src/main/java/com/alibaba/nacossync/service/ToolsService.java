@@ -4,6 +4,7 @@ import com.alibaba.nacossync.cache.SkyWalkerCacheServices;
 import com.alibaba.nacossync.constant.TaskStatusEnum;
 import com.alibaba.nacossync.dao.ClusterAccessService;
 import com.alibaba.nacossync.dao.TaskAccessService;
+import com.alibaba.nacossync.event.DeleteTaskEvent;
 import com.alibaba.nacossync.pojo.model.ClusterDO;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.util.SkyWalkerUtil;
@@ -11,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.eventbus.EventBus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -31,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 public class ToolsService {
 
+    private final EventBus eventBus;
     private final HttpService httpService;
     private final TaskAccessService taskAccessService;
     private final ClusterAccessService clusterAccessService;
@@ -40,9 +43,10 @@ public class ToolsService {
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean withInstance = new AtomicBoolean(true);
 
-    public ToolsService(HttpService httpService, TaskAccessService taskAccessService,
+    public ToolsService(EventBus eventBus, HttpService httpService, TaskAccessService taskAccessService,
                         ClusterAccessService clusterAccessService,
                         SkyWalkerCacheServices skyWalkerCacheServices) {
+        this.eventBus = eventBus;
         this.httpService = httpService;
         this.taskAccessService = taskAccessService;
         this.clusterAccessService = clusterAccessService;
@@ -98,6 +102,8 @@ public class ToolsService {
         syncToDest(sourceTasks, destTasks);
         syncIfUpdate(sourceTasks, destTasks);
         syncToSource(sourceTasks, destTasks);
+
+        deleteOldSyncTask(sourceClusterId);
     }
 
     /**
@@ -190,8 +196,47 @@ public class ToolsService {
                 }
             }
         });
-
         result.forEach(this.taskAccessService::addTask);
+    }
+
+    /**
+     * 删除可能存在的双向同步，如果存在双向同步，则删除源 task
+     */
+    private void deleteOldSyncTask(String sourceClusterId) {
+        Iterable<TaskDO> allTask = this.taskAccessService.findAll();
+        for (TaskDO taskDO : allTask) {
+            //  如果不是原同步任务（old server -> new server）则跳过
+            if (!sourceClusterId.equals(taskDO.getSourceClusterId())) {
+                continue;
+            }
+            TaskDO newTask = findNewTask(allTask, taskDO);
+            if (newTask != null) {
+                eventBus.post(new DeleteTaskEvent(taskDO));
+                this.taskAccessService.deleteTaskById(taskDO.getTaskId());
+            }
+        }
+    }
+
+    /**
+     * 查找反向同步任务！
+     * @param allTask   所有任务
+     * @param oldTask   原同步任务
+     * @return          反向同步任务
+     */
+    private TaskDO findNewTask(Iterable<TaskDO> allTask, TaskDO oldTask) {
+        for (TaskDO tmp : allTask) {
+            if (!tmp.getServiceName().equals(oldTask.getServiceName())) {
+                continue;
+            }
+            if (!tmp.getSourceClusterId().equals(oldTask.getDestClusterId())) {
+                continue;
+            }
+            if (!tmp.getDestClusterId().equals(oldTask.getSourceClusterId())) {
+                continue;
+            }
+            return tmp;
+        }
+        return null;
     }
 
     /**
