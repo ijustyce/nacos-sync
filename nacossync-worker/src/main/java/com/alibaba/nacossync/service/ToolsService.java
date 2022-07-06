@@ -126,13 +126,6 @@ public class ToolsService {
      * @return 在目标集群，但不在原集群的 非 consumer 服务
      */
     private ArrayList<TaskDO> diffDestProvider(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
-        if (ObjectUtils.isEmpty(sourceTasks)) {
-            return null;
-        }
-        if (ObjectUtils.isEmpty(destTasks)) {
-            return null;
-        }
-
         ArrayList<TaskDO> result = new ArrayList<>();
         for (TaskDO taskDO : destTasks) {
             //  如果是 consumer 则跳过
