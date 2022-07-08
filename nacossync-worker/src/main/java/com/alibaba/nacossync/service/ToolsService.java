@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.eventbus.EventBus;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
@@ -100,14 +101,13 @@ public class ToolsService {
         }
 
         syncToDest(sourceTasks, destTasks);
-        syncIfUpdate(sourceTasks, destTasks);
         syncToSource(sourceTasks, destTasks);
 
         deleteOldSyncTask(sourceClusterId);
     }
 
     /**
-     * 将 consumer 在原集群，但是 provider 不在原集群而是在目标集群的，将目标集群的 provider 同步到原集群
+     * 如果目标集群中某个 provider 不在原集群或 ip 数量比原集群中的多，则同步到原集群.
      */
     private void syncToSource(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
         ArrayList<TaskDO> list = diffDestProvider(sourceTasks, destTasks);
@@ -128,15 +128,22 @@ public class ToolsService {
     private ArrayList<TaskDO> diffDestProvider(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
         ArrayList<TaskDO> result = new ArrayList<>();
         for (TaskDO taskDO : destTasks) {
+            if (taskDO.getIpCount() < 1) {
+                log.error("error ip count is {} return now", taskDO.getIpCount());
+                continue;
+            }
             //  如果是 consumer 则跳过
             if (taskDO.getServiceName().startsWith("consumers:")) {
                 continue;
             }
 
             TaskDO provider = findByName(sourceTasks, taskDO.getServiceName());
-            //  如果原集群存在该 provider 则跳过
+            //  如果原集群存在该 provider 且 ip 数量不少于目标集群，则跳过
             if (provider != null) {
-                continue;
+                if (provider.getIpCount() >= taskDO.getIpCount()) {
+                    continue;
+                }
+                log.info("provider updated dest ip count {}, old ip count {}", taskDO.getIpCount(), provider.getIpCount());
             }
 
             TaskDO toAddTask = syncToSourceTask(taskDO);
@@ -145,51 +152,6 @@ public class ToolsService {
             }
         }
         return result;
-    }
-
-    /**
-     * 将更新后的服务同步到源集群，解决源集群的 provider 更新后连接到了目标集群，
-     * 但是源集群的 consumer 连接的依旧是源集群，导致找不到该 provider
-     *
-     * @param sourceTasks 原集群服务信息
-     * @param destTasks   目标集群服务信息
-     */
-    private void syncIfUpdate(ArrayList<TaskDO> sourceTasks, ArrayList<TaskDO> destTasks) {
-        if (ObjectUtils.isEmpty(destTasks)) {
-            return;
-        }
-        //  如果为第一次，则不需要考虑更新的情况
-        if (withInstance.get()) {
-            return;
-        }
-        String sourceNacosId = destTasks.get(0).getSourceClusterId();
-        String destNacosId = destTasks.get(0).getDestClusterId();
-
-        List<TaskDO> result = new ArrayList<>();
-
-        Iterable<TaskDO> allTask = this.taskAccessService.findAll();
-        allTask.forEach(it -> {
-            //  只查找同步到目标集群的，反向同步的过滤掉
-            if (it.getSourceClusterId().equals(sourceNacosId) && it.getDestClusterId().equals(destNacosId)) {
-                TaskDO sourceTask = findByName(sourceTasks, it.getServiceName());
-                if (sourceTask == null) {
-                    TaskDO tmp = syncToSourceTask(it);
-                    if (tmp != null) {
-                        result.add(tmp);
-                    }
-                } else {
-                    TaskDO destTask = findByName(destTasks, it.getServiceName());
-                    if (destTask != null && destTask.getIpCount() > sourceTask.getIpCount()
-                            && destTask.getIpCount() > 0 && sourceTask.getIpCount() > 0) {
-                        TaskDO tmp = syncToSourceTask(it);
-                        if (tmp != null) {
-                            result.add(tmp);
-                        }
-                    }
-                }
-            }
-        });
-        result.forEach(this.taskAccessService::addTask);
     }
 
     /**
@@ -212,9 +174,10 @@ public class ToolsService {
 
     /**
      * 查找反向同步任务！
-     * @param allTask   所有任务
-     * @param oldTask   原同步任务
-     * @return          反向同步任务
+     *
+     * @param allTask 所有任务
+     * @param oldTask 原同步任务
+     * @return 反向同步任务
      */
     private TaskDO findNewTask(Iterable<TaskDO> allTask, TaskDO oldTask) {
         for (TaskDO tmp : allTask) {
@@ -343,21 +306,27 @@ public class ToolsService {
         }
 
         for (JsonNode jsonNode : arrayNode) {
-            if (isFromSync(jsonNode)) {
+            Pair<Boolean, Integer> pair = fetchSyncInfo(jsonNode);
+            if (pair.getFirst()) {
                 continue;
             }
 
             String serviceName;
-            int ipCount = 0;
+            int ipCount;
             if (jsonNode.has("name")) {
                 serviceName = jsonNode.get("name").asText();
                 ipCount = jsonNode.get("ipCount").asInt();
             } else {
                 serviceName = jsonNode.get("serviceName").asText();
+                ipCount = pair.getSecond();
             }
             if (ObjectUtils.isEmpty(serviceName)) {
                 String error = jsonNode.toPrettyString();
                 throw new RuntimeException("serviceName is empty: " + error);
+            }
+
+            if (ipCount < 1) {
+                log.warn("ipCount less than 1, serviceName is {}", serviceName);
             }
 
             String groupName = jsonNode.get("groupName").asText();
@@ -369,12 +338,14 @@ public class ToolsService {
         return tasks;
     }
 
-    private boolean isFromSync(JsonNode jsonNode) {
+    private Pair<Boolean, Integer> fetchSyncInfo(JsonNode jsonNode) {
         if (!jsonNode.has("clusterMap")) {
-            return false;
+            return Pair.of(false, 0);
         }
         JsonNode clusterMap = jsonNode.get("clusterMap");
         Iterator<JsonNode> elements = clusterMap.elements();
+        boolean result = false;
+        int ipCount = 0;
         while (elements.hasNext()) {
             JsonNode cluster = elements.next();
             ArrayNode hosts = (ArrayNode) cluster.get("hosts");
@@ -384,12 +355,13 @@ public class ToolsService {
                 if (metadata != null) {
                     JsonNode syncSource = metadata.get("syncSource");
                     if (syncSource != null && "NACOS".equals(syncSource.asText())) {
-                        return true;
+                        result = true;
                     }
                 }
+                ipCount++;
             }
         }
-        return false;
+        return Pair.of(result, ipCount);
     }
 
     private TaskDO generateTask(String serviceName, String groupName, String sourceClusterId, String destClusterId) throws Exception {
