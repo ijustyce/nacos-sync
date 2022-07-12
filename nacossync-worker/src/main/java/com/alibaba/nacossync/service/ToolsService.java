@@ -143,6 +143,10 @@ public class ToolsService {
                 if (provider.getIpCount() >= taskDO.getIpCount()) {
                     continue;
                 }
+                if (provider.getIpCount() > 1) {
+                    log.info("old ip count is {} ignore it.", provider.getIpCount());
+                    continue;
+                }
                 log.info("provider updated dest ip count {}, old ip count {}", taskDO.getIpCount(), provider.getIpCount());
             }
 
