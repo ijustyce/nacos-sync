@@ -134,9 +134,10 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
                             .deregisterInstance(taskDO.getServiceName(), getGroupNameOrDefault(taskDO.getGroupName()),
                                     instance.getIp(),
                                     instance.getPort());
-                    log.info("反注册服务 {} ip {}", taskDO.getServiceName(), instance.getIp());
+                    log.info("反注册服务 {} ip {} port {}", taskDO.getServiceName(), instance.getIp(), instance.getPort());
                 } else {
-                    log.info("服务 {}, ip {} 不能反注册，因为不是来自同步的任务！", taskDO.getServiceName(), instance.getIp());
+                    log.info("服务 {}, ip {} port {} 不能反注册，因为不是来自同步的任务！", taskDO.getServiceName(),
+                            instance.getIp(), instance.getPort());
                 }
             }
         } catch (Exception e) {
