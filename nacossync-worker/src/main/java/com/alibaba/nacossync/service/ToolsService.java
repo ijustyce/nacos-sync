@@ -89,11 +89,11 @@ public class ToolsService {
         ClusterDO sourceCluster = clusterAccessService.findByClusterId(sourceClusterId);
         ClusterDO destCluster = clusterAccessService.findByClusterId(destClusterId);
 
-        String sourceServices = serviceInfo(sourceCluster);
         String destServices = serviceInfo(destCluster);
+        String sourceServices = serviceInfo(sourceCluster);
 
-        ArrayList<TaskDO> sourceTasks = servicesToTask(sourceServices, sourceClusterId, destClusterId);
         ArrayList<TaskDO> destTasks = servicesToTask(destServices, sourceClusterId, destClusterId);
+        ArrayList<TaskDO> sourceTasks = servicesToTask(sourceServices, sourceClusterId, destClusterId);
 
         log.info("sources task count {}, destTasks count {}", sourceTasks.size(), destTasks.size());
         if (!ObjectUtils.isEmpty(sourceTasks) && !ObjectUtils.isEmpty(destTasks)) {
@@ -104,6 +104,8 @@ public class ToolsService {
         syncToSource(sourceTasks, destTasks);
 
         deleteOldSyncTask(sourceClusterId);
+        deleteUnExistsTask(destTasks, destClusterId);
+        deleteUnExistsTask(destTasks, sourceClusterId);
     }
 
     /**
@@ -159,7 +161,7 @@ public class ToolsService {
     }
 
     /**
-     * 删除可能存在的双向同步，如果存在双向同步，则删除源 task
+     * 删除可能存在的双向同步，如果存在双向同步，则删除原 task
      */
     private void deleteOldSyncTask(String sourceClusterId) {
         Iterable<TaskDO> allTask = this.taskAccessService.findAll();
@@ -170,6 +172,22 @@ public class ToolsService {
             }
             TaskDO newTask = findNewTask(allTask, taskDO);
             if (newTask != null) {
+                log.info("删除原同步任务，避免双向同步 {}", taskDO);
+                eventBus.post(new DeleteTaskEvent(taskDO));
+                this.taskAccessService.deleteTaskById(taskDO.getTaskId());
+            }
+        }
+    }
+
+    private void deleteUnExistsTask(ArrayList<TaskDO> destTasks, String sourceClusterId) {
+        Iterable<TaskDO> allTask = this.taskAccessService.findAll();
+        for (TaskDO taskDO : allTask) {
+            if (!sourceClusterId.equals(taskDO.getSourceClusterId())) {
+                continue;
+            }
+            TaskDO newTask = findByName(destTasks, taskDO.getServiceName());
+            if (newTask == null) {
+                log.info("服务不存在，删除同步任务，避免错误同步 {}", taskDO);
                 eventBus.post(new DeleteTaskEvent(taskDO));
                 this.taskAccessService.deleteTaskById(taskDO.getTaskId());
             }
