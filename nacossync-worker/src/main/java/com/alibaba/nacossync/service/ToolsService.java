@@ -105,7 +105,7 @@ public class ToolsService {
 
         deleteOldSyncTask(sourceClusterId);
         deleteUnExistsTask(destTasks, destClusterId);
-        deleteUnExistsTask(destTasks, sourceClusterId);
+        deleteUnExistsTask(sourceTasks, sourceClusterId);
     }
 
     /**
