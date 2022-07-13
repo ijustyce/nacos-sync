@@ -181,13 +181,13 @@ public class ToolsService {
         }
     }
 
-    private void deleteUnExistsTask(ArrayList<TaskDO> destTasks, String sourceClusterId) {
+    private void deleteUnExistsTask(ArrayList<TaskDO> sourceTasks, String sourceClusterId) {
         Iterable<TaskDO> allTask = this.taskAccessService.findAll();
         for (TaskDO taskDO : allTask) {
             if (!sourceClusterId.equals(taskDO.getSourceClusterId())) {
                 continue;
             }
-            TaskDO newTask = findByName(destTasks, taskDO.getServiceName());
+            TaskDO newTask = findByName(sourceTasks, taskDO.getServiceName());
             if (newTask == null) {
                 log.info("服务不存在，删除同步任务，避免错误同步 {}", taskDO);
                 eventBus.post(new DeleteTaskEvent(taskDO));
