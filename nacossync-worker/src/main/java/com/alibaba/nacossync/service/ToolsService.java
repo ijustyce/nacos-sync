@@ -104,7 +104,9 @@ public class ToolsService {
         syncToSource(sourceTasks, destTasks);
 
         deleteOldSyncTask(sourceClusterId);
+        //  删除服务不在新集群但存在同步任务的任务
         deleteUnExistsTask(destTasks, destClusterId);
+        //  删除服务不在老集群但存在同步任务的任务
         deleteUnExistsTask(sourceTasks, sourceClusterId);
     }
 
