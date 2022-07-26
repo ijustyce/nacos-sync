@@ -12,29 +12,23 @@
  */
 package com.alibaba.nacossync.api;
 
-import com.alibaba.nacossync.dao.ClusterAccessService;
-import com.alibaba.nacossync.pojo.model.ClusterDO;
-import com.alibaba.nacossync.pojo.request.TaskAddRequest;
-import com.alibaba.nacossync.pojo.request.TaskDeleteInBatchRequest;
-import com.alibaba.nacossync.pojo.request.TaskDeleteRequest;
-import com.alibaba.nacossync.pojo.request.TaskDetailQueryRequest;
-import com.alibaba.nacossync.pojo.request.TaskListQueryRequest;
-import com.alibaba.nacossync.pojo.request.TaskUpdateRequest;
+import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacossync.extension.holder.NacosServerHolder;
+import com.alibaba.nacossync.pojo.request.*;
 import com.alibaba.nacossync.pojo.result.BaseResult;
 import com.alibaba.nacossync.pojo.result.TaskAddResult;
 import com.alibaba.nacossync.pojo.result.TaskDetailQueryResult;
 import com.alibaba.nacossync.pojo.result.TaskListQueryResult;
-import com.alibaba.nacossync.service.ToolsService;
 import com.alibaba.nacossync.template.SkyWalkerTemplate;
-import com.alibaba.nacossync.template.processor.TaskAddProcessor;
-import com.alibaba.nacossync.template.processor.TaskDeleteInBatchProcessor;
-import com.alibaba.nacossync.template.processor.TaskDeleteProcessor;
-import com.alibaba.nacossync.template.processor.TaskDetailProcessor;
-import com.alibaba.nacossync.template.processor.TaskListQueryProcessor;
-import com.alibaba.nacossync.template.processor.TaskUpdateProcessor;
+import com.alibaba.nacossync.template.processor.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * @author NacosSync
@@ -56,22 +50,20 @@ public class TaskApi {
 
     private final TaskDetailProcessor taskDetailProcessor;
 
-    private final ClusterAccessService clusterAccessService;
+    private final NacosServerHolder nacosServerHolder;
 
-    private final ToolsService toolsService;
 
     public TaskApi(TaskUpdateProcessor taskUpdateProcessor, TaskAddProcessor taskAddProcessor,
                    TaskDeleteProcessor taskDeleteProcessor, TaskDeleteInBatchProcessor taskDeleteInBatchProcessor,
                    TaskListQueryProcessor taskListQueryProcessor, TaskDetailProcessor taskDetailProcessor,
-                   ClusterAccessService clusterAccessService, ToolsService toolsService) {
+                   NacosServerHolder nacosServerHolder) {
         this.taskUpdateProcessor = taskUpdateProcessor;
         this.taskAddProcessor = taskAddProcessor;
         this.taskDeleteProcessor = taskDeleteProcessor;
         this.taskDeleteInBatchProcessor = taskDeleteInBatchProcessor;
         this.taskListQueryProcessor = taskListQueryProcessor;
         this.taskDetailProcessor = taskDetailProcessor;
-        this.clusterAccessService = clusterAccessService;
-        this.toolsService = toolsService;
+        this.nacosServerHolder = nacosServerHolder;
     }
 
     @RequestMapping(path = "/v1/task/list", method = RequestMethod.GET)
@@ -93,9 +85,9 @@ public class TaskApi {
     }
 
     /**
-     * @author yongchao9
      * @param taskBatchDeleteRequest
      * @return
+     * @author yongchao9
      */
     @RequestMapping(path = "/v1/task/deleteInBatch", method = RequestMethod.DELETE)
     public BaseResult batchDeleteTask(TaskDeleteInBatchRequest taskBatchDeleteRequest) {
@@ -112,5 +104,11 @@ public class TaskApi {
     public BaseResult updateTask(@RequestBody TaskUpdateRequest taskUpdateRequest) {
 
         return SkyWalkerTemplate.run(taskUpdateProcessor, taskUpdateRequest, new BaseResult());
+    }
+
+    @RequestMapping(value = "/v1/instance", method = RequestMethod.GET)
+    public List<Instance> listInstance(String sourceClusterId, String serviceName) throws Exception {
+        NamingService namingService = nacosServerHolder.get(sourceClusterId);
+        return namingService.getAllInstances(serviceName);
     }
 }
