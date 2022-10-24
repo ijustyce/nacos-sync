@@ -63,33 +63,10 @@ public class ToolsService {
     public void tryToStartAsync(String sourceClusterId, String destClusterId) {
         if (started.compareAndSet(false, true)) {
             log.info("started is {} try to start now.", started.get());
-            //    runNacosServiceAsync(sourceClusterId, destClusterId);
-            addTask(sourceClusterId, destClusterId);
+            runNacosServiceAsync(sourceClusterId, destClusterId);
             return;
         }
         log.error("started is {} ignore.", started.get());
-    }
-
-    private void addTask(String sourceClusterId, String destClusterId) {
-        ArrayList<TaskDO> result = new ArrayList<>();
-
-        try {
-            TaskDO destToSourceTask = generateTask("providers:com.yy.aurogon.datacenter.daas.api.DaasQueryService:1.0.0:",
-                    "DEFAULT_GROUP", destClusterId, sourceClusterId);
-            result.add(destToSourceTask);
-
-            TaskDO syncTask1 = generateTask("providers:com.yy.janus.dubbo.JanusDubboService::",
-                    "DEFAULT_GROUP", sourceClusterId, destClusterId);
-            result.add(syncTask1);
-
-            TaskDO syncTask2 = generateTask("janus-embedded:com.yy.aurogon.datacenter.daas.api.get",
-                    "janus-client", sourceClusterId, destClusterId);
-            result.add(syncTask2);
-        } catch (Exception e) {
-            log.error("error while add task", e);
-        }
-
-        result.forEach(this.taskAccessService::addTask);
     }
 
     private void runNacosServiceAsync(String sourceClusterId, String destClusterId) {

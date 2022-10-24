@@ -75,23 +75,11 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
-//        addCluster("xjp-preview", "54.251.229.7:6802", "preview");
-//        addCluster("xjp-preview-v3", "52.76.18.150:6802", "preview");
+        addCluster("sz-prev", "shopline-nacos-sz.duowan.com:6802", "preview");
+        addCluster("sz-sysop-prev", "nacos-sz-sysop.inshopline.com:6802", "preview");
 
-        addCluster("fs-test", "ehlxm.nacos.duowan.com:6801", "develop");
-        addCluster("nacos-pod", "10.218.18.224:6802", "develop");
-
-        addCluster("xjp-preview", "shopline-nacos-xjp-prod-87acd84ebecadb93.elb.ap-southeast-1.amazonaws.com:6802", "preview");
-        addCluster("xjp-product", "shopline-nacos-xjp-prod-87acd84ebecadb93.elb.ap-southeast-1.amazonaws.com:6802", "product");
-
-        addCluster("fjny-preview", "shopline-nacos-fjny-prod-ebadfe4360977950.elb.us-east-1.amazonaws.com:6802", "preview");
-        addCluster("fjny-product", "shopline-nacos-fjny-prod-ebadfe4360977950.elb.us-east-1.amazonaws.com:6802", "product");
-
-        addCluster("xjp-v3-preview", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com:6802", "preview");
-        addCluster("xjp-v3-product", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com:6802", "product");
-
-        addCluster("fjny-v3-preview", "nacos-fjny-v3-0-27a9de3b376a8cd7.elb.us-east-1.amazonaws.com:6802", "preview");
-        addCluster("fjny-v3-product", "nacos-fjny-v3-0-27a9de3b376a8cd7.elb.us-east-1.amazonaws.com:6802", "product");
+        addCluster("sz-prod", "shopline-nacos-sz.duowan.com:6802", "product");
+        addCluster("sz-sysop-prod", "nacos-sz-sysop.inshopline.com:6802", "product");
     }
 
     private void addCluster(String name, String address, String namespace) {
