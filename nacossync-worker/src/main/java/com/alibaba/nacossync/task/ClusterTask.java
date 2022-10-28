@@ -42,8 +42,8 @@ public class ClusterTask implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        addAllCluster();
-        beginAsync();
+    //    addAllCluster();
+    //    beginAsync();
     }
 
     private void beginAsync() {
