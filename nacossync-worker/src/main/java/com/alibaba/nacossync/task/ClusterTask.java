@@ -28,11 +28,11 @@ public class ClusterTask implements CommandLineRunner {
     private final ObjectMapper objectMapper;
     private final ToolsService toolsService;
 
-    @Value("${sl.nacos.sourceClusterName}")
-    private String sourceClusterName;
+//    @Value("${sl.nacos.sourceClusterName}")
+    private String sourceClusterName="aa";
 
-    @Value("${sl.nacos.destClusterName}")
-    private String destClusterName;
+//    @Value("${sl.nacos.destClusterName}")
+    private String destClusterName="bb";
 
     public ClusterTask(ClusterAccessService clusterAccessService, ObjectMapper objectMapper, ToolsService toolsService) {
         this.clusterAccessService = clusterAccessService;

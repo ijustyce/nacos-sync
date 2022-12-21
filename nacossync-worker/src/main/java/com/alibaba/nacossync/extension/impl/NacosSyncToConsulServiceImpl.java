@@ -32,6 +32,7 @@ import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
 import com.ecwid.consul.v1.agent.model.NewService;
+import com.ecwid.consul.v1.catalog.model.CatalogService;
 import com.ecwid.consul.v1.health.model.HealthService;
 import com.google.common.collect.Lists;
 import java.net.URLEncoder;
@@ -71,15 +72,13 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
     @Override
     public boolean delete(TaskDO taskDO) {
         try {
-
+            log.info("delete consul begin");
             NamingService sourceNamingService =
                 nacosServerHolder.get(taskDO.getSourceClusterId());
             ConsulClient consulClient = consulServerHolder.get(taskDO.getDestClusterId());
 
             sourceNamingService.unsubscribe(taskDO.getServiceName(),
                 NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), nacosListenerMap.get(taskDO.getTaskId()));
-
-            // 删除目标集群中同步的实例列表
             Response<List<HealthService>> serviceResponse =
                 consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
             List<HealthService> healthServices = serviceResponse.getValue();
@@ -111,19 +110,23 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         Set<String> instanceKeySet = new HashSet<>();
                         List<Instance> sourceInstances = sourceNamingService.getAllInstances(taskDO.getServiceName(),
                             NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()));
+                        // 再将不存在的删掉
+                        Response<List<HealthService>> serviceResponse =
+                                consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
+                        List<HealthService> healthServices = serviceResponse.getValue();
+                        Set<String> ip2PortSet =
+                                healthServices.stream().map(x -> composeInstanceKey(x.getService().getAddress(),
+                                x.getService().getPort())).collect(Collectors.toSet());
                         // 先将新的注册一遍
                         for (Instance instance : sourceInstances) {
-                            if (needSync(instance.getMetadata())) {
+                            String ip2Port = composeInstanceKey(instance.getIp(), instance.getPort());
+                            if (needSync(instance.getMetadata())&&!ip2PortSet.contains(ip2Port)) {
                                 consulClient.agentServiceRegister(buildSyncInstance(instance, taskDO));
-                                instance.getInstanceId();
-                                instanceKeySet.add(composeInstanceKey(instance.getIp(), instance.getPort()));
+                                instanceKeySet.add(ip2Port);
                             }
                         }
 
-                        // 再将不存在的删掉
-                        Response<List<HealthService>> serviceResponse =
-                            consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
-                        List<HealthService> healthServices = serviceResponse.getValue();
+
                         for (HealthService healthService : healthServices) {
 
                             if (needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO)
