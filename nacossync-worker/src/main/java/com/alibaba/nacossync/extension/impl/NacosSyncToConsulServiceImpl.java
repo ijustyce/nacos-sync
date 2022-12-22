@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author zhanglong
@@ -51,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @NacosSyncService(sourceCluster = ClusterTypeEnum.NACOS, destinationCluster = ClusterTypeEnum.CONSUL)
 public class NacosSyncToConsulServiceImpl implements SyncService {
+    public static final String ID_DELIMITER = "-";
 
     private Map<String, EventListener> nacosListenerMap = new ConcurrentHashMap<>();
 
@@ -110,7 +112,6 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         Set<String> instanceKeySet = new HashSet<>();
                         List<Instance> sourceInstances = sourceNamingService.getAllInstances(taskDO.getServiceName(),
                             NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()));
-                        // 再将不存在的删掉
                         Response<List<HealthService>> serviceResponse =
                                 consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
                         List<HealthService> healthServices = serviceResponse.getValue();
@@ -120,20 +121,24 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         // 先将新的注册一遍
                         for (Instance instance : sourceInstances) {
                             String ip2Port = composeInstanceKey(instance.getIp(), instance.getPort());
-                            if (needSync(instance.getMetadata())&&!ip2PortSet.contains(ip2Port)) {
-                                consulClient.agentServiceRegister(buildSyncInstance(instance, taskDO));
+                            if (needSync(instance.getMetadata())) {
                                 instanceKeySet.add(ip2Port);
+                                if(!ip2PortSet.contains(ip2Port)){
+                                    consulClient.agentServiceRegister(buildSyncInstance(instance, taskDO));
+                                }
+
                             }
                         }
 
-
+                        // 再将不存在的删掉
                         for (HealthService healthService : healthServices) {
 
-                            if (needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO)
-                                && !instanceKeySet.contains(composeInstanceKey(healthService.getService().getAddress(),
-                                healthService.getService().getPort()))) {
-                                consulClient.agentServiceDeregister(URLEncoder
-                                    .encode(healthService.getService().getId(), StandardCharsets.UTF_8.toString()));
+                            boolean needDelete = needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO);
+                            boolean notContain = !instanceKeySet.contains(composeInstanceKey(healthService.getService().getAddress(),
+                                    healthService.getService().getPort()));
+                            if (needDelete && notContain) {
+                                String encode = URLEncoder.encode(healthService.getService().getId(), StandardCharsets.UTF_8.toString());
+                                consulClient.agentServiceDeregister(encode);
                             }
                         }
                     } catch (Exception e) {
@@ -162,6 +167,9 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         newService.setAddress(instance.getIp());
         newService.setPort(instance.getPort());
         newService.setName(taskDO.getServiceName());
+        if (StringUtils.isEmpty(instance.getInstanceId())) {
+            instance.setInstanceId(generateInstanceId(instance));
+        }
         newService.setId(instance.getInstanceId());
         List<String> tags = Lists.newArrayList();
         tags.addAll(instance.getMetadata().entrySet().stream()
@@ -174,4 +182,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         return newService;
     }
 
+    private String generateInstanceId(Instance instance) {
+        return instance.getIp() + ID_DELIMITER + instance.getPort();
+    }
 }
