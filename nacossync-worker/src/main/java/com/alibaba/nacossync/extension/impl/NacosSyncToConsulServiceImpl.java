@@ -26,6 +26,7 @@ import com.alibaba.nacossync.extension.holder.ConsulServerHolder;
 import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.monitor.MetricsManager;
 import com.alibaba.nacossync.pojo.model.TaskDO;
+import com.alibaba.nacossync.util.AlarmUtil;
 import com.alibaba.nacossync.util.ConsulUtils;
 import com.alibaba.nacossync.util.NacosUtils;
 import com.ecwid.consul.v1.ConsulClient;
@@ -35,6 +36,8 @@ import com.ecwid.consul.v1.agent.model.NewService;
 import com.ecwid.consul.v1.catalog.model.CatalogService;
 import com.ecwid.consul.v1.health.model.HealthService;
 import com.google.common.collect.Lists;
+
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
@@ -45,6 +48,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.curator.RetrySleeper;
+import org.springframework.util.CollectionUtils;
 
 /**
  * @author zhanglong
@@ -132,13 +137,11 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
 
                         // 再将不存在的删掉
                         for (HealthService healthService : healthServices) {
-
                             boolean needDelete = needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO);
                             boolean notContain = !instanceKeySet.contains(composeInstanceKey(healthService.getService().getAddress(),
                                     healthService.getService().getPort()));
                             if (needDelete && notContain) {
-                                String encode = URLEncoder.encode(healthService.getService().getId(), StandardCharsets.UTF_8.toString());
-                                consulClient.agentServiceDeregister(encode);
+                                deleteService(consulClient,healthService);
                             }
                         }
                     } catch (Exception e) {
@@ -183,6 +186,44 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
     }
 
     private String generateInstanceId(Instance instance) {
-        return instance.getIp() + ID_DELIMITER + instance.getPort();
+        return instance.getIp() + ID_DELIMITER + instance.getPort() + ID_DELIMITER + instance.getServiceName();
+    }
+
+    private boolean deleteService(ConsulClient consulClient,HealthService healthService) {
+        int count = 0;
+        String serviceId = healthService.getService().getId();
+        String encode = null;
+        try {
+            encode = URLEncoder.encode(serviceId, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        while (true) {
+            try {
+                consulClient.agentServiceDeregister(encode);
+                Response<List<HealthService>> serviceResponse =
+                        consulClient.getHealthServices(healthService.getService().getService(), true, QueryParams.DEFAULT);
+                List<HealthService> healthServices = serviceResponse.getValue();
+                if (CollectionUtils.isEmpty(healthServices)) {
+                    break;
+                }
+                Set<String> serviceIdSet =
+                        healthServices.stream().map(x -> x.getService().getId()).collect(Collectors.toSet());
+                if (CollectionUtils.isEmpty(serviceIdSet) || !serviceIdSet.contains(serviceId)) {
+                    break;
+                }
+                count++;
+                if (count > 10) {
+                    log.error("Deregister failed");
+                    AlarmUtil.alarm("Deregister failed,serviceId:"+serviceId);
+                }
+                Thread.sleep(50);
+                consulClient.agentServiceDeregister(encode);
+            }catch (Exception e) {
+                log.error(e.getMessage(),e);
+            }
+        }
+
+        return true;
     }
 }
