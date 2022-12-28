@@ -217,6 +217,11 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                     log.error("Deregister failed");
                     AlarmUtil.alarm("Deregister failed,serviceId:"+serviceId);
                 }
+                if (count > 20) {
+                    log.error("Deregister failed");
+                    AlarmUtil.alarm("Deregister failed,serviceId:"+serviceId);
+                    break;
+                }
                 Thread.sleep(50);
                 consulClient.agentServiceDeregister(encode);
             }catch (Exception e) {
