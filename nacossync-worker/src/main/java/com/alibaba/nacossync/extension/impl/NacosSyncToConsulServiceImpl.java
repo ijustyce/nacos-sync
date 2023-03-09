@@ -26,14 +26,18 @@ import com.alibaba.nacossync.extension.holder.ConsulServerHolder;
 import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.monitor.MetricsManager;
 import com.alibaba.nacossync.pojo.model.TaskDO;
+import com.alibaba.nacossync.util.AlarmUtil;
 import com.alibaba.nacossync.util.ConsulUtils;
 import com.alibaba.nacossync.util.NacosUtils;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
 import com.ecwid.consul.v1.agent.model.NewService;
+import com.ecwid.consul.v1.catalog.model.CatalogService;
 import com.ecwid.consul.v1.health.model.HealthService;
 import com.google.common.collect.Lists;
+
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
@@ -43,6 +47,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.curator.RetrySleeper;
+import org.springframework.util.CollectionUtils;
 
 /**
  * @author zhanglong
@@ -50,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @NacosSyncService(sourceCluster = ClusterTypeEnum.NACOS, destinationCluster = ClusterTypeEnum.CONSUL)
 public class NacosSyncToConsulServiceImpl implements SyncService {
+    public static final String ID_DELIMITER = "-";
 
     private Map<String, EventListener> nacosListenerMap = new ConcurrentHashMap<>();
 
@@ -71,15 +79,13 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
     @Override
     public boolean delete(TaskDO taskDO) {
         try {
-
+            log.info("delete consul begin");
             NamingService sourceNamingService =
                 nacosServerHolder.get(taskDO.getSourceClusterId());
             ConsulClient consulClient = consulServerHolder.get(taskDO.getDestClusterId());
 
             sourceNamingService.unsubscribe(taskDO.getServiceName(),
                 NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), nacosListenerMap.get(taskDO.getTaskId()));
-
-            // 删除目标集群中同步的实例列表
             Response<List<HealthService>> serviceResponse =
                 consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
             List<HealthService> healthServices = serviceResponse.getValue();
@@ -111,26 +117,31 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         Set<String> instanceKeySet = new HashSet<>();
                         List<Instance> sourceInstances = sourceNamingService.getAllInstances(taskDO.getServiceName(),
                             NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()));
+                        Response<List<HealthService>> serviceResponse =
+                                consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
+                        List<HealthService> healthServices = serviceResponse.getValue();
+                        Set<String> ip2PortSet =
+                                healthServices.stream().map(x -> composeInstanceKey(x.getService().getAddress(),
+                                x.getService().getPort())).collect(Collectors.toSet());
                         // 先将新的注册一遍
                         for (Instance instance : sourceInstances) {
+                            String ip2Port = composeInstanceKey(instance.getIp(), instance.getPort());
                             if (needSync(instance.getMetadata())) {
-                                consulClient.agentServiceRegister(buildSyncInstance(instance, taskDO));
-                                instance.getInstanceId();
-                                instanceKeySet.add(composeInstanceKey(instance.getIp(), instance.getPort()));
+                                instanceKeySet.add(ip2Port);
+                                if(!ip2PortSet.contains(ip2Port)){
+                                    consulClient.agentServiceRegister(buildSyncInstance(instance, taskDO));
+                                }
+
                             }
                         }
 
                         // 再将不存在的删掉
-                        Response<List<HealthService>> serviceResponse =
-                            consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
-                        List<HealthService> healthServices = serviceResponse.getValue();
                         for (HealthService healthService : healthServices) {
-
-                            if (needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO)
-                                && !instanceKeySet.contains(composeInstanceKey(healthService.getService().getAddress(),
-                                healthService.getService().getPort()))) {
-                                consulClient.agentServiceDeregister(URLEncoder
-                                    .encode(healthService.getService().getId(), StandardCharsets.UTF_8.toString()));
+                            boolean needDelete = needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO);
+                            boolean notContain = !instanceKeySet.contains(composeInstanceKey(healthService.getService().getAddress(),
+                                    healthService.getService().getPort()));
+                            if (needDelete && notContain) {
+                                deleteService(consulClient,healthService);
                             }
                         }
                     } catch (Exception e) {
@@ -159,6 +170,9 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         newService.setAddress(instance.getIp());
         newService.setPort(instance.getPort());
         newService.setName(taskDO.getServiceName());
+        if (StringUtils.isEmpty(instance.getInstanceId())) {
+            instance.setInstanceId(generateInstanceId(instance));
+        }
         newService.setId(instance.getInstanceId());
         List<String> tags = Lists.newArrayList();
         tags.addAll(instance.getMetadata().entrySet().stream()
@@ -171,4 +185,50 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         return newService;
     }
 
+    private String generateInstanceId(Instance instance) {
+        return instance.getIp() + ID_DELIMITER + instance.getPort() + ID_DELIMITER + instance.getServiceName();
+    }
+
+    private boolean deleteService(ConsulClient consulClient,HealthService healthService) {
+        int count = 0;
+        String serviceId = healthService.getService().getId();
+        String encode = null;
+        try {
+            encode = URLEncoder.encode(serviceId, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        while (true) {
+            try {
+                consulClient.agentServiceDeregister(encode);
+                Response<List<HealthService>> serviceResponse =
+                        consulClient.getHealthServices(healthService.getService().getService(), true, QueryParams.DEFAULT);
+                List<HealthService> healthServices = serviceResponse.getValue();
+                if (CollectionUtils.isEmpty(healthServices)) {
+                    break;
+                }
+                Set<String> serviceIdSet =
+                        healthServices.stream().map(x -> x.getService().getId()).collect(Collectors.toSet());
+                if (CollectionUtils.isEmpty(serviceIdSet) || !serviceIdSet.contains(serviceId)) {
+                    break;
+                }
+                count++;
+                if (count > 10) {
+                    log.error("Deregister failed");
+                    AlarmUtil.alarm("Deregister failed,serviceId:"+serviceId);
+                }
+                if (count > 20) {
+                    log.error("Deregister failed");
+                    AlarmUtil.alarm("Deregister failed,serviceId:"+serviceId);
+                    break;
+                }
+                Thread.sleep(50);
+                consulClient.agentServiceDeregister(encode);
+            }catch (Exception e) {
+                log.error(e.getMessage(),e);
+            }
+        }
+
+        return true;
+    }
 }
