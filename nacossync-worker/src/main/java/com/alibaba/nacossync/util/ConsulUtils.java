@@ -13,11 +13,11 @@
 package com.alibaba.nacossync.util;
 
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author paderlol
@@ -27,8 +27,15 @@ public class ConsulUtils {
     public static Map<String, String> transferMetadata(List<String> tags) {
         Map<String, String> metadata = new HashMap<>();
         if (!CollectionUtils.isEmpty(tags)) {
-            return tags.stream().filter(tag -> tag.split("=", -1).length == 2).map(tag -> tag.split("=", -1))
-                .collect(Collectors.toMap(tagSplitArray -> tagSplitArray[0], tagSplitArray -> tagSplitArray[1]));
+            for (String tag : tags) {
+                if (ObjectUtils.isEmpty(tag)) {
+                    continue;
+                }
+                String[] tmp = tag.split("=", -1);
+                if (tmp.length == 2) {
+                    metadata.put(tmp[0], tmp[1]);
+                }
+            }
         }
         return metadata;
     }
