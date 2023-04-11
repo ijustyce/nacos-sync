@@ -12,6 +12,7 @@
  */
 package com.alibaba.nacossync.extension.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
@@ -117,6 +118,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         Set<String> instanceKeySet = new HashSet<>();
                         List<Instance> sourceInstances = sourceNamingService.getAllInstances(taskDO.getServiceName(),
                             NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()));
+                        log.info("sourec ip list:{}", JSON.toJSONString(sourceInstances));
                         Response<List<HealthService>> serviceResponse =
                                 consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
                         List<HealthService> healthServices = serviceResponse.getValue();
@@ -126,10 +128,13 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         // 先将新的注册一遍
                         for (Instance instance : sourceInstances) {
                             String ip2Port = composeInstanceKey(instance.getIp(), instance.getPort());
+                            log.info("source sync ip:{}", ip2Port);
                             if (needSync(instance.getMetadata())) {
+                                log.info("need sync ip:{}", ip2Port);
                                 instanceKeySet.add(ip2Port);
                                 if(!ip2PortSet.contains(ip2Port)){
                                     consulClient.agentServiceRegister(buildSyncInstance(instance, taskDO));
+                                    log.info("already sync ip:{}", ip2Port);
                                 }
 
                             }
