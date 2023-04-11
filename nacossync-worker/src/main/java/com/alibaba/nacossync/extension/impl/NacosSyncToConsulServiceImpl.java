@@ -133,7 +133,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                                 log.info("need sync ip:{}", ip2Port);
                                 instanceKeySet.add(ip2Port);
                                 if(!ip2PortSet.contains(ip2Port)){
-                                    consulClient.agentServiceRegister(buildSyncInstance(instance, taskDO));
+                                    registerService(consulClient,buildSyncInstance(instance, taskDO));
                                     log.info("already sync ip:{}", ip2Port);
                                 }
 
@@ -229,6 +229,48 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 }
                 Thread.sleep(50);
                 consulClient.agentServiceDeregister(encode);
+            }catch (Exception e) {
+                log.error(e.getMessage(),e);
+            }
+        }
+
+        return true;
+    }
+
+    private boolean registerService(ConsulClient consulClient,NewService service) {
+        int count = 0;
+        String serviceId = service.getId();
+        while (true) {
+            try {
+                consulClient.agentServiceRegister(service);
+                count++;
+                Response<List<HealthService>> serviceResponse =
+                        consulClient.getHealthServices(service.getName(), true, QueryParams.DEFAULT);
+                List<HealthService> healthServices = serviceResponse.getValue();
+                if (CollectionUtils.isEmpty(healthServices)) {
+                    if (count > 20) {
+                        log.error("Register failed,serviceId:{}",serviceId);
+                        AlarmUtil.alarm("Register failed,serviceId:"+serviceId);
+                        break;
+                    }
+                    continue;
+                }
+                Set<String> serviceIdSet =
+                        healthServices.stream().map(x -> x.getService().getId()).collect(Collectors.toSet());
+                if (!CollectionUtils.isEmpty(serviceIdSet) && serviceIdSet.contains(serviceId)) {
+                    break;
+                }
+
+                if (count > 10) {
+                    log.error("Register failed,serviceId:{}",serviceId);
+                    AlarmUtil.alarm("Register failed,serviceId:"+serviceId);
+                }
+                if (count > 20) {
+                    log.error("Register failed,serviceId:{}",serviceId);
+                    AlarmUtil.alarm("Register failed,serviceId:"+serviceId);
+                    break;
+                }
+                Thread.sleep(50);
             }catch (Exception e) {
                 log.error(e.getMessage(),e);
             }
