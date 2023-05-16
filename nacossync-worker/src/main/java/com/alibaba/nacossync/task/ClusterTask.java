@@ -42,8 +42,8 @@ public class ClusterTask implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-    //    addAllCluster();
-    //    beginAsync();
+        addAllCluster();
+        beginAsync();
     }
 
     private void beginAsync() {
@@ -75,13 +75,8 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
-        addCluster("sz-prev", "shopline-nacos-sz.duowan.com:6802", "preview");
-        addCluster("sz-sysop-prev", "nacos-sz-sysop.inshopline.com:6802", "preview");
-        addCluster("sz-new-prev", "10.87.0.188:6802", "preview");
-
-        addCluster("sz-prod", "shopline-nacos-sz.duowan.com:6802", "product");
-        addCluster("sz-sysop-prod", "nacos-sz-sysop.inshopline.com:6802", "product");
-        addCluster("sz-new-prod", "10.87.0.188:6802", "product");
+        addCluster("xjp-v3", "nacos-xjp.inshopline.com:6802", "preview");
+        addCluster("xjp-pre", "10.90.208.85:6802", "preview");
     }
 
     private void addCluster(String name, String address, String namespace) {
