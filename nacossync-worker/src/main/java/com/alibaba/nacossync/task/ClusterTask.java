@@ -71,6 +71,9 @@ public class ClusterTask implements CommandLineRunner {
         addCluster("xjp-v3", "nacos-xjp.inshopline.com:6802", "preview");
         addCluster("xjp-pre", "10.90.208.85:6802", "preview");
 
+        addCluster("xjp-product", "nacos-xjp.inshopline.com:6802", "product");
+        addCluster("xjp-pre-product", "10.90.208.85:6802", "product");
+
         addCluster("xjp-v3-eom", "nacos-xjp.inshopline.com:6802", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
         addCluster("xjp-eom", "10.90.208.85:6802", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
 
@@ -97,6 +100,8 @@ public class ClusterTask implements CommandLineRunner {
         beginAsync("xjp-v3-510", "xjp-510");
 
         beginAsync("xjp-v3-ai", "xjp-ai");
+
+        beginAsync("xjp-pre-product", "xjp-product");
     }
 
     private void addCluster(String name, String address, String namespace) {
