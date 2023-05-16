@@ -28,12 +28,6 @@ public class ClusterTask implements CommandLineRunner {
     private final ObjectMapper objectMapper;
     private final ToolsService toolsService;
 
-    @Value("${sl.nacos.sourceClusterName}")
-    private String sourceClusterName;
-
-    @Value("${sl.nacos.destClusterName}")
-    private String destClusterName;
-
     public ClusterTask(ClusterAccessService clusterAccessService, ObjectMapper objectMapper, ToolsService toolsService) {
         this.clusterAccessService = clusterAccessService;
         this.objectMapper = objectMapper;
@@ -43,10 +37,9 @@ public class ClusterTask implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         addAllCluster();
-        beginAsync();
     }
 
-    private void beginAsync() {
+    private void beginAsync(String sourceClusterName, String destClusterName) {
         Page<ClusterDO> page = clusterAccessService.findPageNoCriteria(0, 100);
         List<ClusterDO> list = page.getContent();
 
@@ -77,6 +70,33 @@ public class ClusterTask implements CommandLineRunner {
     private void addAllCluster() {
         addCluster("xjp-v3", "nacos-xjp.inshopline.com:6802", "preview");
         addCluster("xjp-pre", "10.90.208.85:6802", "preview");
+
+        addCluster("xjp-v3-eom", "nacos-xjp.inshopline.com:6802", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
+        addCluster("xjp-eom", "10.90.208.85:6802", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
+
+        addCluster("xjp-v3-eom-new", "nacos-xjp.inshopline.com:6802", "f0082435-ea66-4662-aead-6935e0d5bd9c");
+        addCluster("xjp-eom-new", "10.90.208.85:6802", "f0082435-ea66-4662-aead-6935e0d5bd9c");
+
+        addCluster("xjp-v3-erp", "nacos-xjp.inshopline.com:6802", "sg-erp-preview");
+        addCluster("xjp-erp", "10.90.208.85:6802", "sg-erp-preview");
+
+        addCluster("xjp-v3-510", "nacos-xjp.inshopline.com:6802", "8448898e-f28d-40fe-a179-1ad1e52180eb");
+        addCluster("xjp-510", "10.90.208.85:6802", "8448898e-f28d-40fe-a179-1ad1e52180eb");
+
+        addCluster("xjp-v3-ai", "nacos-xjp.inshopline.com:6802", "ai_preview");
+        addCluster("xjp-ai", "10.90.208.85:6802", "ai_preview");
+
+        beginAsync("xjp-v3", "xjp-pre");
+
+        beginAsync("xjp-v3-eom", "xjp-eom");
+
+        beginAsync("xjp-v3-eom-new", "xjp-eom-new");
+
+        beginAsync("xjp-v3-erp", "xjp-erp");
+
+        beginAsync("xjp-v3-510", "xjp-510");
+
+        beginAsync("xjp-v3-ai", "xjp-ai");
     }
 
     private void addCluster(String name, String address, String namespace) {

@@ -40,8 +40,6 @@ public class ToolsService {
     private final ClusterAccessService clusterAccessService;
     private final SkyWalkerCacheServices skyWalkerCacheServices;
     private final ScheduledExecutorService scheduledService;
-
-    private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean withInstance = new AtomicBoolean(true);
 
     public ToolsService(EventBus eventBus, HttpService httpService, TaskAccessService taskAccessService,
@@ -61,15 +59,6 @@ public class ToolsService {
     }
 
     public void tryToStartAsync(String sourceClusterId, String destClusterId) {
-        if (started.compareAndSet(false, true)) {
-            log.info("started is {} try to start now.", started.get());
-            runNacosServiceAsync(sourceClusterId, destClusterId);
-            return;
-        }
-        log.error("started is {} ignore.", started.get());
-    }
-
-    private void runNacosServiceAsync(String sourceClusterId, String destClusterId) {
         log.info("begin runNacosServiceAsync");
         scheduledService.execute(() -> {
             try {
@@ -79,7 +68,7 @@ public class ToolsService {
             }
         });
 
-        scheduledService.schedule(() -> runNacosServiceAsync(sourceClusterId, destClusterId), 5, TimeUnit.SECONDS);
+        scheduledService.schedule(() -> tryToStartAsync(sourceClusterId, destClusterId), 5, TimeUnit.SECONDS);
         log.info("end runNacosServiceAsync");
     }
 
