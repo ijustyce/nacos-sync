@@ -36,7 +36,7 @@ public class ClusterTask implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        addAllCluster();
+        //  addAllCluster();
     }
 
     private void beginAsync(String sourceClusterName, String destClusterName) {
@@ -100,8 +100,6 @@ public class ClusterTask implements CommandLineRunner {
         beginAsync("xjp-v3-510", "xjp-510");
 
         beginAsync("xjp-v3-ai", "xjp-ai");
-
-        beginAsync("xjp-pre-product", "xjp-product");
     }
 
     private void addCluster(String name, String address, String namespace) {
