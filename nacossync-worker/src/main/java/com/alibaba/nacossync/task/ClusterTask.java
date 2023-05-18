@@ -8,7 +8,6 @@ import com.alibaba.nacossync.service.ToolsService;
 import com.alibaba.nacossync.util.SkyWalkerUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -36,7 +35,7 @@ public class ClusterTask implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        //  addAllCluster();
+        addAllCluster();
     }
 
     private void beginAsync(String sourceClusterName, String destClusterName) {
@@ -68,38 +67,11 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
-        addCluster("xjp-v3", "nacos-xjp.inshopline.com:6802", "preview");
-        addCluster("xjp-pre", "10.90.208.85:6802", "preview");
+        addCluster("xjp-prod-prev", "nacos-xjp.inshopline.com:6802", "preview");
+        addCluster("xjp-prev-prev", "nacos-xjp-prev.inshopline.com:6802", "preview");
 
-        addCluster("xjp-product", "nacos-xjp.inshopline.com:6802", "product");
-        addCluster("xjp-pre-product", "10.90.208.85:6802", "product");
-
-        addCluster("xjp-v3-eom", "nacos-xjp.inshopline.com:6802", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
-        addCluster("xjp-eom", "10.90.208.85:6802", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
-
-        addCluster("xjp-v3-eom-new", "nacos-xjp.inshopline.com:6802", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-        addCluster("xjp-eom-new", "10.90.208.85:6802", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-
-        addCluster("xjp-v3-erp", "nacos-xjp.inshopline.com:6802", "sg-erp-preview");
-        addCluster("xjp-erp", "10.90.208.85:6802", "sg-erp-preview");
-
-        addCluster("xjp-v3-510", "nacos-xjp.inshopline.com:6802", "8448898e-f28d-40fe-a179-1ad1e52180eb");
-        addCluster("xjp-510", "10.90.208.85:6802", "8448898e-f28d-40fe-a179-1ad1e52180eb");
-
-        addCluster("xjp-v3-ai", "nacos-xjp.inshopline.com:6802", "ai_preview");
-        addCluster("xjp-ai", "10.90.208.85:6802", "ai_preview");
-
-        beginAsync("xjp-v3", "xjp-pre");
-
-        beginAsync("xjp-v3-eom", "xjp-eom");
-
-        beginAsync("xjp-v3-eom-new", "xjp-eom-new");
-
-        beginAsync("xjp-v3-erp", "xjp-erp");
-
-        beginAsync("xjp-v3-510", "xjp-510");
-
-        beginAsync("xjp-v3-ai", "xjp-ai");
+        addCluster("xjp-prod-prod", "nacos-xjp.inshopline.com:6802", "product");
+        addCluster("xjp-prev-prod", "nacos-xjp-prev.inshopline.com:6802", "product");
     }
 
     private void addCluster(String name, String address, String namespace) {
