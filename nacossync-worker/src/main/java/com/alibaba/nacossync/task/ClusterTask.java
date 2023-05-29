@@ -84,9 +84,9 @@ public class ClusterTask implements CommandLineRunner {
 
 //        beginAsync("xjp-v3", "xjp-pre");
 
-        beginAsync("xjp-v3-eom", "xjp-eom");
+//        beginAsync("xjp-v3-eom", "xjp-eom");
 
-        beginAsync("xjp-v3-eom-new", "xjp-eom-new");
+//        beginAsync("xjp-v3-eom-new", "xjp-eom-new");
 
         beginAsync("xjp-v3-ai", "xjp-ai");
 
