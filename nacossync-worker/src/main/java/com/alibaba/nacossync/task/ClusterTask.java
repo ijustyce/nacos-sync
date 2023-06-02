@@ -93,10 +93,10 @@ public class ClusterTask implements CommandLineRunner {
 //        beginAsync("xjp-pre-product", "xjp-product");
 
         addCluster("fjny-prod-ai", "nacos-fjny.inshopline.com:6802", "ai_preview");
-        addCluster("fjny-prev-ai", "10.92.209.20:6802", "ai_preview");
+        addCluster("fjny-prev-ai", "nacos-fjny-prev.inshopline.com:6802", "ai_preview");
 
         addCluster("fjny-prod-prev", "nacos-fjny.inshopline.com:6802", "preview");
-        addCluster("fjny-prev-prev", "10.92.209.20:6802", "preview");
+        addCluster("fjny-prev-prev", "nacos-fjny-prev.inshopline.com:6802", "preview");
 
         beginAsync("fjny-prod-ai", "fjny-prev-ai");
         beginAsync("fjny-prod-prev", "fjny-prev-prev");
