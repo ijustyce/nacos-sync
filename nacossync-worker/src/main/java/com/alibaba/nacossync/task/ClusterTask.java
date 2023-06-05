@@ -98,8 +98,8 @@ public class ClusterTask implements CommandLineRunner {
         addCluster("fjny-prod-prev", "nacos-fjny.inshopline.com:6802", "preview");
         addCluster("fjny-prev-prev", "nacos-fjny-prev.inshopline.com:6802", "preview");
 
-        beginAsync("fjny-prod-ai", "fjny-prev-ai");
-        beginAsync("fjny-prod-prev", "fjny-prev-prev");
+//        beginAsync("fjny-prod-ai", "fjny-prev-ai");
+//        beginAsync("fjny-prod-prev", "fjny-prev-prev");
     }
 
     private void addCluster(String name, String address, String namespace) {
