@@ -12,6 +12,7 @@
  */
 package com.alibaba.nacossync.extension.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -74,6 +75,7 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
     public boolean delete(TaskDO taskDO) {
 
         try {
+            log.info("delete nacos task id:{}", taskDO.getTaskId());
             specialSyncEventBus.unsubscribe(taskDO);
 
             NamingService destNamingService = nacosServerHolder.get(taskDO.getDestClusterId());
@@ -103,6 +105,7 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
             Response<List<HealthService>> response =
                 consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
             List<HealthService> healthServiceList = response.getValue();
+            log.info("sourec ip list:{}", JSON.toJSONString(healthServiceList));
             Set<String> instanceKeys = new HashSet<>();
             overrideAllInstance(taskDO, destNamingService, healthServiceList, instanceKeys);
             cleanAllOldInstance(taskDO, destNamingService, instanceKeys);
