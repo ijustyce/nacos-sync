@@ -124,7 +124,7 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
         for (Instance instance : allInstances) {
             if (needDelete(instance.getMetadata(), taskDO)
                 && !instanceKeys.contains(composeInstanceKey(instance.getIp(), instance.getPort()))) {
-
+                log.info("remove to nacos old ip:{}",instance.getIp());
                 destNamingService.deregisterInstance(taskDO.getServiceName(),
                     NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), instance.getIp(), instance.getPort());
             }
@@ -138,7 +138,9 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 destNamingService.registerInstance(taskDO.getServiceName(),
                     NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()),
                     buildSyncInstance(healthService, taskDO));
-                instanceKeys.add(composeInstanceKey(healthService.getService().getAddress(),
+                String address = healthService.getService().getAddress();
+                log.info("add to nacos new ip:{}",address);
+                instanceKeys.add(composeInstanceKey(address,
                     healthService.getService().getPort()));
             }
         }
