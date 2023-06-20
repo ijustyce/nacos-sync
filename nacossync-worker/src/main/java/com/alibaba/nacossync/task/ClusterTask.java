@@ -92,18 +92,20 @@ public class ClusterTask implements CommandLineRunner {
 
 //        beginAsync("xjp-pre-product", "xjp-product");
 
-        addCluster("fjny-old-prod", "10.92.210.224:6802", "product");
-        addCluster("fjny-new-prod", "10.92.209.200:6802", "product");
+        //  以下为弗吉尼亚
 
-        addCluster("fjny-old-public", "10.92.210.224:6802", "");
-        addCluster("fjny-new-public", "10.92.209.200:6802", "");
-
-        addCluster("fjny-old-ai", "10.92.210.224:6802", "ai_product");
-        addCluster("fjny-new-ai", "10.92.209.200:6802", "ai_product");
-
-        beginAsync("fjny-old-prod", "fjny-new-prod");
-        beginAsync("fjny-old-public", "fjny-new-public");
-        beginAsync("fjny-old-ai", "fjny-new-ai");
+//        addCluster("fjny-old-prod", "10.92.210.224:6802", "product");
+//        addCluster("fjny-new-prod", "10.92.209.200:6802", "product");
+//
+//        addCluster("fjny-old-public", "10.92.210.224:6802", "");
+//        addCluster("fjny-new-public", "10.92.209.200:6802", "");
+//
+//        addCluster("fjny-old-ai", "10.92.210.224:6802", "ai_product");
+//        addCluster("fjny-new-ai", "10.92.209.200:6802", "ai_product");
+//
+//        beginAsync("fjny-old-prod", "fjny-new-prod");
+//        beginAsync("fjny-old-public", "fjny-new-public");
+//        beginAsync("fjny-old-ai", "fjny-new-ai");
     }
 
     private void addCluster(String name, String address, String namespace) {
