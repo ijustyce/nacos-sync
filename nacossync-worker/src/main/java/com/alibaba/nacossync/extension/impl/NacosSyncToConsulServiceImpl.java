@@ -133,6 +133,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                                 log.info("need sync ip:{}", ip2Port);
                                 instanceKeySet.add(ip2Port);
                                 if(!ip2PortSet.contains(ip2Port)){
+                                    log.error("nacos-consul-diff consul 上不存在节点 {} 现在开始同步.", ip2Port);
                                     registerService(consulClient,buildSyncInstance(instance, taskDO));
                                     log.info("already sync ip:{}", ip2Port);
                                 }
@@ -146,6 +147,8 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                             boolean notContain = !instanceKeySet.contains(composeInstanceKey(healthService.getService().getAddress(),
                                     healthService.getService().getPort()));
                             if (needDelete && notContain) {
+                                log.error("nacos-consul-diff consul 上存在来自同步的节点 {}:{} 但是 nacos 上不存在该节点，现在删除它.",
+                                        healthService.getService().getAddress(), healthService.getService().getPort());
                                 deleteService(consulClient,healthService);
                             }
                         }
