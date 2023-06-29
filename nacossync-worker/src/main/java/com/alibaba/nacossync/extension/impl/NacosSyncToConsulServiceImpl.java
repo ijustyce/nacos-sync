@@ -80,7 +80,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
     @Override
     public boolean delete(TaskDO taskDO) {
         try {
-            log.info("delete consul begin");
+            log.info("delete consul task id:{}", taskDO.getTaskId());
             NamingService sourceNamingService =
                 nacosServerHolder.get(taskDO.getSourceClusterId());
             ConsulClient consulClient = consulServerHolder.get(taskDO.getDestClusterId());

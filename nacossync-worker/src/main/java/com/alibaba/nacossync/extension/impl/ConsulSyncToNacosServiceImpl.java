@@ -12,6 +12,7 @@
  */
 package com.alibaba.nacossync.extension.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -74,6 +75,7 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
     public boolean delete(TaskDO taskDO) {
 
         try {
+            log.info("delete nacos task id:{}", taskDO.getTaskId());
             specialSyncEventBus.unsubscribe(taskDO);
 
             NamingService destNamingService = nacosServerHolder.get(taskDO.getDestClusterId());
@@ -103,6 +105,7 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
             Response<List<HealthService>> response =
                 consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
             List<HealthService> healthServiceList = response.getValue();
+            log.info("sourec ip list:{}", JSON.toJSONString(healthServiceList));
             Set<String> instanceKeys = new HashSet<>();
             overrideAllInstance(taskDO, destNamingService, healthServiceList, instanceKeys);
             cleanAllOldInstance(taskDO, destNamingService, instanceKeys);
@@ -117,13 +120,16 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
 
     private void cleanAllOldInstance(TaskDO taskDO, NamingService destNamingService, Set<String> instanceKeys)
         throws NacosException {
-        List<Instance> allInstances = destNamingService.getAllInstances(taskDO.getServiceName());
+        String groupName = NacosUtils.getGroupNameOrDefault(taskDO.getGroupName());
+        List<Instance> allInstances = destNamingService.getAllInstances(taskDO.getServiceName(),groupName);
         for (Instance instance : allInstances) {
             if (needDelete(instance.getMetadata(), taskDO)
                 && !instanceKeys.contains(composeInstanceKey(instance.getIp(), instance.getPort()))) {
-
+                log.info("remove to nacos old ip:{}",instance.getIp());
+                log.info("remove to nacos groupName:{}",groupName);
                 destNamingService.deregisterInstance(taskDO.getServiceName(),
-                    NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), instance.getIp(), instance.getPort());
+                        groupName, instance.getIp(), instance.getPort());
+                log.info("remove to nacos taskInfo:{}",JSON.toJSONString(taskDO));
             }
         }
     }
@@ -135,7 +141,9 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 destNamingService.registerInstance(taskDO.getServiceName(),
                     NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()),
                     buildSyncInstance(healthService, taskDO));
-                instanceKeys.add(composeInstanceKey(healthService.getService().getAddress(),
+                String address = healthService.getService().getAddress();
+                log.info("add to nacos new ip:{}",address);
+                instanceKeys.add(composeInstanceKey(address,
                     healthService.getService().getPort()));
             }
         }
