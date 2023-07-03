@@ -67,45 +67,32 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
-//        addCluster("xjp-v3", "nacos-xjp.inshopline.com:6802", "preview");
-//        addCluster("xjp-pre", "nacos-xjp-prev.inshopline.com:6802", "preview");
-//
-//        addCluster("xjp-product", "nacos-xjp.inshopline.com:6802", "product");
-//        addCluster("xjp-pre-product", "nacos-xjp-prev.inshopline.com:6802", "product");
-//
-//        addCluster("xjp-v3-eom", "nacos-xjp.inshopline.com:6802", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
-//        addCluster("xjp-eom", "nacos-xjp-prev.inshopline.com:6802", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
-//
-//        addCluster("xjp-v3-eom-new", "nacos-xjp.inshopline.com:6802", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-//        addCluster("xjp-eom-new", "nacos-xjp-prev.inshopline.com:6802", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-//
-//        addCluster("xjp-v3-ai", "nacos-xjp.inshopline.com:6802", "ai_preview");
-//        addCluster("xjp-ai", "nacos-xjp-prev.inshopline.com:6802", "ai_preview");
+        addCluster("xjp-product", "10.86.169.96:6802", "product");
+        addCluster("xjp-eco-old", "10.86.169.96:6802", "d5d75bd7-935e-4057-af25-126a946b321f");
+        addCluster("xjp-eco-new", "10.86.169.96:6802", "7164b7c1-28f0-4d87-9ed2-6a30bdd706cc");
+        addCluster("xjp-sl-jdp", "10.86.169.96:6802", "sl-jdp");
+        addCluster("xjp-data-platform", "10.86.169.96:6802", "data_platform");
+        addCluster("xjp-ai-product", "10.86.169.96:6802", "ai_product");
+        addCluster("xjp-sf-product", "10.86.169.96:6802", "sl-ecom-sf-prod");
+        addCluster("xjp-ot-product", "10.86.169.96:6802", "sl-ecom-ot-prod");
 
-//        beginAsync("xjp-v3", "xjp-pre");
+        addCluster("xjp-new-product", "10.90.209.115:6802", "product");
+        addCluster("xjp-new-eco-old", "10.90.210.107:6802", "d5d75bd7-935e-4057-af25-126a946b321f");
+        addCluster("xjp-new-eco-new", "10.90.210.107:6802", "7164b7c1-28f0-4d87-9ed2-6a30bdd706cc");
+        addCluster("xjp-new-sl-jdp", "10.90.210.107:6802", "sl-jdp");
+        addCluster("xjp-new-data-platform", "10.90.210.107:6802", "data_platform");
+        addCluster("xjp-new-ai-product", "10.90.210.107:6802", "ai_product");
+        addCluster("xjp-new-sf-product", "10.90.210.107:6802", "sl-ecom-sf-prod");
+        addCluster("xjp-new-ot-product", "10.90.210.107:6802", "sl-ecom-ot-prod");
 
-//        beginAsync("xjp-v3-eom", "xjp-eom");
-
-//        beginAsync("xjp-v3-eom-new", "xjp-eom-new");
-
-//        beginAsync("xjp-v3-ai", "xjp-ai");
-
-//        beginAsync("xjp-pre-product", "xjp-product");
-
-        //  以下为弗吉尼亚
-
-//        addCluster("fjny-old-prod", "10.92.210.224:6802", "product");
-//        addCluster("fjny-new-prod", "10.92.209.200:6802", "product");
-//
-//        addCluster("fjny-old-public", "10.92.210.224:6802", "");
-//        addCluster("fjny-new-public", "10.92.209.200:6802", "");
-//
-//        addCluster("fjny-old-ai", "10.92.210.224:6802", "ai_product");
-//        addCluster("fjny-new-ai", "10.92.209.200:6802", "ai_product");
-//
-//        beginAsync("fjny-old-prod", "fjny-new-prod");
-//        beginAsync("fjny-old-public", "fjny-new-public");
-//        beginAsync("fjny-old-ai", "fjny-new-ai");
+        beginAsync("xjp-product", "xjp-new-product");
+        beginAsync("xjp-eco-old", "xjp-new-eco-old");
+        beginAsync("xjp-eco-new", "xjp-new-eco-new");
+        beginAsync("xjp-sl-jdp", "xjp-new-sl-jdp");
+        beginAsync("xjp-data-platform", "xjp-new-data-platform");
+        beginAsync("xjp-ai-product", "xjp-new-ai-product");
+        beginAsync("xjp-sf-product", "xjp-new-sf-product");
+        beginAsync("xjp-ot-product", "xjp-new-ot-product");
     }
 
     private void addCluster(String name, String address, String namespace) {
