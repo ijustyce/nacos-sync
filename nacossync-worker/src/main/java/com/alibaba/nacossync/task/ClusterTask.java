@@ -85,14 +85,23 @@ public class ClusterTask implements CommandLineRunner {
         addCluster("xjp-new-sf-product", "nacos-xjp.inshopline.com:6802", "sl-ecom-sf-prod");
         addCluster("xjp-new-ot-product", "nacos-xjp.inshopline.com:6802", "sl-ecom-ot-prod");
 
-        beginAsync("xjp-product", "xjp-new-product");
-        beginAsync("xjp-eco-old", "xjp-new-eco-old");
-        beginAsync("xjp-eco-new", "xjp-new-eco-new");
-        beginAsync("xjp-sl-jdp", "xjp-new-sl-jdp");
-        beginAsync("xjp-data-platform", "xjp-new-data-platform");
-        beginAsync("xjp-ai-product", "xjp-new-ai-product");
-        beginAsync("xjp-sf-product", "xjp-new-sf-product");
-        beginAsync("xjp-ot-product", "xjp-new-ot-product");
+//        beginAsync("xjp-product", "xjp-new-product");
+//        beginAsync("xjp-eco-old", "xjp-new-eco-old");
+//        beginAsync("xjp-eco-new", "xjp-new-eco-new");
+//        beginAsync("xjp-sl-jdp", "xjp-new-sl-jdp");
+//        beginAsync("xjp-data-platform", "xjp-new-data-platform");
+//        beginAsync("xjp-ai-product", "xjp-new-ai-product");
+//        beginAsync("xjp-sf-product", "xjp-new-sf-product");
+//        beginAsync("xjp-ot-product", "xjp-new-ot-product");
+
+        beginAsync("xjp-new-product", "xjp-product");
+        beginAsync("xjp-new-eco-old", "xjp-eco-old");
+        beginAsync("xj-newp-eco-new", "xjp-eco-new");
+        beginAsync("xjp-new-sl-jdp", "xjp-sl-jdp");
+        beginAsync("xjp-new-data-platform", "xjp-data-platform");
+        beginAsync("xjp-new-ai-product", "xjp-ai-product");
+        beginAsync("xjp-new-sf-product", "xjp-sf-product");
+        beginAsync("xjp-new-ot-product", "xjp-ot-product");
     }
 
     private void addCluster(String name, String address, String namespace) {
