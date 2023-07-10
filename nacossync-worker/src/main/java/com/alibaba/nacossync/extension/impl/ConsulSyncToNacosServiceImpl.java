@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Consul 同步 Nacos
@@ -130,23 +131,46 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 destNamingService.deregisterInstance(taskDO.getServiceName(),
                         groupName, instance.getIp(), instance.getPort());
                 log.info("remove to nacos taskInfo:{}",JSON.toJSONString(taskDO));
+                log.error("consul-nacos-diff nacos 上存在来自同步的节点 {}:{} 但是 consul 上不存在该节点，现在删除它.",
+                        instance.getIp(), instance.getPort());
             }
         }
     }
 
     private void overrideAllInstance(TaskDO taskDO, NamingService destNamingService,
         List<HealthService> healthServiceList, Set<String> instanceKeys) throws NacosException {
+        String groupName = NacosUtils.getGroupNameOrDefault(taskDO.getGroupName());
+        List<Instance> allInstances = destNamingService.getAllInstances(taskDO.getServiceName(),groupName);
         for (HealthService healthService : healthServiceList) {
             if (needSync(ConsulUtils.transferMetadata(healthService.getService().getTags()))) {
-                destNamingService.registerInstance(taskDO.getServiceName(),
-                    NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()),
-                    buildSyncInstance(healthService, taskDO));
                 String address = healthService.getService().getAddress();
-                log.info("add to nacos new ip:{}",address);
-                instanceKeys.add(composeInstanceKey(address,
-                    healthService.getService().getPort()));
+                int port = healthService.getService().getPort();
+                instanceKeys.add(composeInstanceKey(address, port));
+                //  如果不在 nacos 里，则同步
+                if (notExistsInNacos(allInstances, address, port)) {
+                    Instance instance = buildSyncInstance(healthService, taskDO);
+                    destNamingService.registerInstance(taskDO.getServiceName(), groupName, instance);
+                    log.error("consul-nacos-diff nacos 上不存在节点 {}:{} 现在开始同步.", instance.getIp(), instance.getPort());
+                }
             }
         }
+    }
+
+    private boolean notExistsInNacos(List<Instance> allInstances, String ip, int port) {
+        if (ObjectUtils.isEmpty(allInstances)) {
+            return true;
+        }
+
+        for (Instance instance : allInstances) {
+            if (instance == null) {
+                continue;
+            }
+            if (ip.equals(instance.getIp()) && port == instance.getPort()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private Instance buildSyncInstance(HealthService instance, TaskDO taskDO) {
