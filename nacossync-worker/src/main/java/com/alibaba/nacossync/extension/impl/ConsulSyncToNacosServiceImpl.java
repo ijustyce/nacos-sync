@@ -131,8 +131,9 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 destNamingService.deregisterInstance(taskDO.getServiceName(),
                         groupName, instance.getIp(), instance.getPort());
                 log.info("remove to nacos taskInfo:{}",JSON.toJSONString(taskDO));
-                log.error("consul-nacos-diff nacos 上存在来自同步的节点 {}:{} 但是 consul 上不存在该节点，现在删除它.",
-                        instance.getIp(), instance.getPort());
+                log.error("consul-nacos-diff nacos 上存在来自同步的节点 serviceName {}, group {}, ip:port {}:{} " +
+                                "但是 consul 上不存在该节点，现在删除它..",
+                        taskDO.getServiceName(), groupName, instance.getIp(), instance.getPort());
             }
         }
     }
@@ -150,7 +151,8 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 if (notExistsInNacos(allInstances, address, port)) {
                     Instance instance = buildSyncInstance(healthService, taskDO);
                     destNamingService.registerInstance(taskDO.getServiceName(), groupName, instance);
-                    log.error("consul-nacos-diff nacos 上不存在节点 {}:{} 现在开始同步.", instance.getIp(), instance.getPort());
+                    log.error("consul-nacos-diff nacos 上不存在 serviceName {}, group {}, ip:port {}:{} 现在开始同步.",
+                            taskDO.getServiceName(), groupName, instance.getIp(), instance.getPort());
                 }
             }
         }
