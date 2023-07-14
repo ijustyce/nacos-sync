@@ -55,7 +55,7 @@ public class SkyWalkerConfiguration {
             thread.setName("nacos-sync-pool" + thread.getId());
             return thread;
         };
-        return new ThreadPoolExecutor(corePollSize, maxPollSize, 0, TimeUnit.MILLISECONDS,
+        return new ThreadPoolExecutor(8 * corePollSize, maxPollSize, 0, TimeUnit.MILLISECONDS,
                 blockingQueue, threadFactory, rejectedExecutionHandler);
     }
 

@@ -107,6 +107,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
 
     @Override
     public boolean sync(TaskDO taskDO) {
+        log.info("nacos-to-consul taskId {}", taskDO.getTaskId());
         try {
             NamingService sourceNamingService =
                 nacosServerHolder.get(taskDO.getSourceClusterId());
@@ -118,7 +119,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         Set<String> instanceKeySet = new HashSet<>();
                         List<Instance> sourceInstances = sourceNamingService.getAllInstances(taskDO.getServiceName(),
                             NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()));
-                        log.info("sourec ip list:{}", JSON.toJSONString(sourceInstances));
+                        log.info("sourec ip list:{} for taskId {}", JSON.toJSONString(sourceInstances), taskDO.getTaskId());
                         Response<List<HealthService>> serviceResponse =
                                 consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
                         List<HealthService> healthServices = serviceResponse.getValue();
@@ -128,15 +129,15 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         // 先将新的注册一遍
                         for (Instance instance : sourceInstances) {
                             String ip2Port = composeInstanceKey(instance.getIp(), instance.getPort());
-                            log.info("source sync ip:{}", ip2Port);
+                            log.info("source sync ip:{} for taskId {}", ip2Port, taskDO.getTaskId());
                             if (needSync(instance.getMetadata())) {
-                                log.info("need sync ip:{}", ip2Port);
+                                log.info("need sync ip:{} for taskId {}", ip2Port, taskDO.getTaskId());
                                 instanceKeySet.add(ip2Port);
                                 if(!ip2PortSet.contains(ip2Port)){
-                                    log.error("nacos-consul-diff consul 上不存在 serviceName {}, group {}, ip:port {} 现在开始同步.",
-                                            taskDO.getServiceName(), taskDO.getGroupName(), ip2Port);
+                                    log.error("nacos-consul-diff consul 上不存在 serviceName {}, group {}, ip:port {} taskId {} 现在开始同步.",
+                                            taskDO.getServiceName(), taskDO.getGroupName(), ip2Port, taskDO.getTaskId());
                                     registerService(consulClient,buildSyncInstance(instance, taskDO));
-                                    log.info("already sync ip:{}", ip2Port);
+                                    log.info("already sync ip:{} for taskId {}", ip2Port, taskDO.getTaskId());
                                 }
 
                             }
@@ -148,10 +149,10 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                             boolean notContain = !instanceKeySet.contains(composeInstanceKey(healthService.getService().getAddress(),
                                     healthService.getService().getPort()));
                             if (needDelete && notContain) {
-                                log.error("nacos-consul-diff consul 上存在来自同步的节点 serviceName {}, group {}, ip:port {}:{} " +
+                                log.error("nacos-consul-diff consul 上存在来自同步的节点 serviceName {}, group {}, ip:port {}:{} taskId {}" +
                                                 "但是 nacos 上不存在该节点，现在删除它..",
                                         taskDO.getServiceName(), taskDO.getGroupName(),
-                                        healthService.getService().getAddress(), healthService.getService().getPort());
+                                        healthService.getService().getAddress(), healthService.getService().getPort(), taskDO.getTaskId());
                                 deleteService(consulClient,healthService);
                             }
                         }

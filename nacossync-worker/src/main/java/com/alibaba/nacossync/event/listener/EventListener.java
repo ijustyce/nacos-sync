@@ -64,18 +64,20 @@ public class EventListener {
 
     @Subscribe
     public void listenerSyncTaskEvent(SyncTaskEvent syncTaskEvent) {
-
+        log.info("on SyncTaskEvent taskId {}", syncTaskEvent.getTaskDO().getTaskId());
         threadPoolExecutor.execute(() -> {
+            log.info("sync for taskId {}", syncTaskEvent.getTaskDO().getTaskId());
             try {
                 long start = System.currentTimeMillis();
                 if (syncManagerService.sync(syncTaskEvent.getTaskDO())) {
+                    log.info("sysnc-finish {}", syncTaskEvent.getTaskDO().getTaskId());
                     skyWalkerCacheServices.addFinishedTask(syncTaskEvent.getTaskDO());
                     metricsManager.record(MetricsStatisticsType.SYNC_TASK_RT, System.currentTimeMillis() - start);
                 } else {
-                    log.warn("listenerSyncTaskEvent sync failure");
+                    log.warn("listenerSyncTaskEvent sync failure for taskId {}", syncTaskEvent.getTaskDO().getTaskId());
                 }
             } catch (Exception e) {
-                log.warn("listenerSyncTaskEvent process error", e);
+                log.warn("listenerSyncTaskEvent process error for taskId {}", syncTaskEvent.getTaskDO().getTaskId(), e);
             }
         });
 
