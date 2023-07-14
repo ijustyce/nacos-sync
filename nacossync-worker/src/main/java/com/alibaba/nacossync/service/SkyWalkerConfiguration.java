@@ -38,8 +38,9 @@ public class SkyWalkerConfiguration {
 
     @Bean
     public ScheduledExecutorService executorService() {
+        int corePollSize = Runtime.getRuntime().availableProcessors() + 1;
 
-        return new ScheduledThreadPoolExecutor(5, new BasicThreadFactory.Builder()
+        return new ScheduledThreadPoolExecutor(corePollSize * 8, new BasicThreadFactory.Builder()
                 .namingPattern("SkyWalker-Timer-schedule-pool-%d").daemon(true).build());
     }
 

@@ -23,6 +23,7 @@ import com.alibaba.nacossync.constant.MetricsStatisticsType;
 import com.alibaba.nacossync.constant.SkyWalkerConstants;
 import com.alibaba.nacossync.extension.SyncService;
 import com.alibaba.nacossync.extension.annotation.NacosSyncService;
+import com.alibaba.nacossync.extension.event.SpecialSyncEventBus;
 import com.alibaba.nacossync.extension.holder.ConsulServerHolder;
 import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.monitor.MetricsManager;
@@ -34,7 +35,6 @@ import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
 import com.ecwid.consul.v1.agent.model.NewService;
-import com.ecwid.consul.v1.catalog.model.CatalogService;
 import com.ecwid.consul.v1.health.model.HealthService;
 import com.google.common.collect.Lists;
 
@@ -49,7 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.curator.RetrySleeper;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -69,12 +68,16 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
     private final NacosServerHolder nacosServerHolder;
     private final ConsulServerHolder consulServerHolder;
 
+    private final SpecialSyncEventBus specialSyncEventBus;
+
     public NacosSyncToConsulServiceImpl(MetricsManager metricsManager, SkyWalkerCacheServices skyWalkerCacheServices,
-        NacosServerHolder nacosServerHolder, ConsulServerHolder consulServerHolder) {
+                                        NacosServerHolder nacosServerHolder, ConsulServerHolder consulServerHolder,
+                                        SpecialSyncEventBus specialSyncEventBus) {
         this.metricsManager = metricsManager;
         this.skyWalkerCacheServices = skyWalkerCacheServices;
         this.nacosServerHolder = nacosServerHolder;
         this.consulServerHolder = consulServerHolder;
+        this.specialSyncEventBus = specialSyncEventBus;
     }
 
     @Override
@@ -165,6 +168,9 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
 
             sourceNamingService.subscribe(taskDO.getServiceName(),
                 NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), nacosListenerMap.get(taskDO.getTaskId()));
+
+            specialSyncEventBus.subscribe(taskDO, this::sync);
+
         } catch (Exception e) {
             log.error("sync task from nacos to nacos was failed, taskId:{}", taskDO.getTaskId(), e);
             metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
