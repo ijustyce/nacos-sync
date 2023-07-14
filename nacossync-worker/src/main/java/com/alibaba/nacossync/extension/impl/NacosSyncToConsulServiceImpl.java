@@ -166,8 +166,10 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 }
             });
 
-            sourceNamingService.subscribe(taskDO.getServiceName(),
-                NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), nacosListenerMap.get(taskDO.getTaskId()));
+            EventListener listener = nacosListenerMap.get(taskDO.getTaskId());
+            String groupName = NacosUtils.getGroupNameOrDefault(taskDO.getGroupName());
+            sourceNamingService.unsubscribe(taskDO.getServiceName(), groupName, listener);
+            sourceNamingService.subscribe(taskDO.getServiceName(), groupName, listener);
 
             specialSyncEventBus.subscribe(taskDO, this::sync);
 
