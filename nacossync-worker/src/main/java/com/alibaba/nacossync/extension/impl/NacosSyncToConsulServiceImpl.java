@@ -117,8 +117,10 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
             ConsulClient consulClient = consulServerHolder.get(taskDO.getDestClusterId());
 
             nacosListenerMap.putIfAbsent(taskDO.getTaskId(), event -> {
+                log.info("putIfAbsent taskId {} event {}", taskDO.getTaskId(), event);
                 if (event instanceof NamingEvent) {
                     try {
+                        log.info("deal naming event.");
                         Set<String> instanceKeySet = new HashSet<>();
                         List<Instance> sourceInstances = sourceNamingService.getAllInstances(taskDO.getServiceName(),
                             NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()));
@@ -168,7 +170,9 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
 
             EventListener listener = nacosListenerMap.get(taskDO.getTaskId());
             String groupName = NacosUtils.getGroupNameOrDefault(taskDO.getGroupName());
+            log.info("unsubscribe for taskId {}", taskDO.getTaskId());
             sourceNamingService.unsubscribe(taskDO.getServiceName(), groupName, listener);
+            log.info("unsubscribe for taskId {}", taskDO.getTaskId());
             sourceNamingService.subscribe(taskDO.getServiceName(), groupName, listener);
 
             specialSyncEventBus.subscribe(taskDO, this::sync);
