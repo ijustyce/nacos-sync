@@ -89,8 +89,10 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 nacosServerHolder.get(taskDO.getSourceClusterId());
             ConsulClient consulClient = consulServerHolder.get(taskDO.getDestClusterId());
 
-            sourceNamingService.unsubscribe(taskDO.getServiceName(),
-                NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), nacosListenerMap.get(taskDO.getTaskId()));
+            try {
+                sourceNamingService.unsubscribe(taskDO.getServiceName(),
+                        NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), nacosListenerMap.get(taskDO.getTaskId()));
+            }catch (Exception ignore){}
             Response<List<HealthService>> serviceResponse =
                 consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
             List<HealthService> healthServices = serviceResponse.getValue();
@@ -102,7 +104,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 }
             }
         } catch (Exception e) {
-            log.error("delete a task from nacos to nacos was failed, taskId:{}", taskDO.getTaskId(), e);
+            log.error("delete a task from nacos to consul was failed, taskId:{}", taskDO.getTaskId(), e);
             metricsManager.recordError(MetricsStatisticsType.DELETE_ERROR);
             return false;
         }
@@ -126,7 +128,9 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
             String groupName = NacosUtils.getGroupNameOrDefault(taskDO.getGroupName());
             log.info("unsubscribe for taskId {}", taskDO.getTaskId());
 
-            sourceNamingService.unsubscribe(taskDO.getServiceName(), groupName, listener);
+            try {
+                sourceNamingService.unsubscribe(taskDO.getServiceName(), groupName, listener);
+            }catch (Exception ignore){}
             log.info("unsubscribe for taskId {}", taskDO.getTaskId());
             sourceNamingService.subscribe(taskDO.getServiceName(), groupName, listener);
 
