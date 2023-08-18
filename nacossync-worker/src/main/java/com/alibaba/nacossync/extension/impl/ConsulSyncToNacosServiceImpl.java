@@ -20,12 +20,14 @@ import com.alibaba.nacossync.cache.SkyWalkerCacheServices;
 import com.alibaba.nacossync.constant.ClusterTypeEnum;
 import com.alibaba.nacossync.constant.MetricsStatisticsType;
 import com.alibaba.nacossync.constant.SkyWalkerConstants;
+import com.alibaba.nacossync.dao.ClusterAccessService;
 import com.alibaba.nacossync.extension.SyncService;
 import com.alibaba.nacossync.extension.annotation.NacosSyncService;
 import com.alibaba.nacossync.extension.event.SpecialSyncEventBus;
 import com.alibaba.nacossync.extension.holder.ConsulServerHolder;
 import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.monitor.MetricsManager;
+import com.alibaba.nacossync.pojo.model.ClusterDO;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.util.ConsulUtils;
 import com.alibaba.nacossync.util.NacosUtils;
@@ -54,21 +56,20 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
 
     @Autowired
     private MetricsManager metricsManager;
-
     private final ConsulServerHolder consulServerHolder;
     private final SkyWalkerCacheServices skyWalkerCacheServices;
-
     private final NacosServerHolder nacosServerHolder;
-
+    private final ClusterAccessService clusterAccessService;
     private final SpecialSyncEventBus specialSyncEventBus;
 
     @Autowired
     public ConsulSyncToNacosServiceImpl(ConsulServerHolder consulServerHolder,
-        SkyWalkerCacheServices skyWalkerCacheServices, NacosServerHolder nacosServerHolder,
-        SpecialSyncEventBus specialSyncEventBus) {
+                                        SkyWalkerCacheServices skyWalkerCacheServices, NacosServerHolder nacosServerHolder,
+                                        ClusterAccessService clusterAccessService, SpecialSyncEventBus specialSyncEventBus) {
         this.consulServerHolder = consulServerHolder;
         this.skyWalkerCacheServices = skyWalkerCacheServices;
         this.nacosServerHolder = nacosServerHolder;
+        this.clusterAccessService = clusterAccessService;
         this.specialSyncEventBus = specialSyncEventBus;
     }
 
@@ -123,6 +124,10 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
         throws NacosException {
         String groupName = NacosUtils.getGroupNameOrDefault(taskDO.getGroupName());
         List<Instance> allInstances = destNamingService.getAllInstances(taskDO.getServiceName(),groupName);
+
+        ClusterDO source = null;
+        ClusterDO dest = null;
+
         for (Instance instance : allInstances) {
             if (needDelete(instance.getMetadata(), taskDO)
                 && !instanceKeys.contains(composeInstanceKey(instance.getIp(), instance.getPort()))) {
@@ -131,9 +136,18 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 destNamingService.deregisterInstance(taskDO.getServiceName(),
                         groupName, instance.getIp(), instance.getPort());
                 log.info("remove to nacos taskInfo:{}",JSON.toJSONString(taskDO));
-                log.error("consul-nacos-diff nacos 上存在来自同步的节点 serviceName {}, group {}, ip:port {}:{} " +
-                                "但是 consul 上不存在该节点，现在删除它..",
-                        taskDO.getServiceName(), groupName, instance.getIp(), instance.getPort());
+
+                if (source == null) {
+                    source = clusterAccessService.findByClusterId(taskDO.getSourceClusterId());
+                }
+
+                if (dest == null) {
+                    dest = clusterAccessService.findByClusterId(taskDO.getDestClusterId());
+                }
+
+                log.error("consul-nacos-diff 源集群名: {}, 目标集群名: {}, nacos 上存在来自同步的节点 serviceName {}, group {}, ip:port {}:{} " +
+                                "但是 consul 上不存在该节点，现在删除它..", source == null ? "" : source.getClusterName(),
+                        dest == null ? "" : dest.getClusterName(), taskDO.getServiceName(), groupName, instance.getIp(), instance.getPort());
             }
         }
     }
@@ -142,6 +156,10 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
         List<HealthService> healthServiceList, Set<String> instanceKeys) throws NacosException {
         String groupName = NacosUtils.getGroupNameOrDefault(taskDO.getGroupName());
         List<Instance> allInstances = destNamingService.getAllInstances(taskDO.getServiceName(),groupName);
+
+        ClusterDO source = null;
+        ClusterDO dest = null;
+
         for (HealthService healthService : healthServiceList) {
             if (needSync(ConsulUtils.transferMetadata(healthService.getService().getTags()))) {
                 String address = healthService.getService().getAddress();
@@ -151,7 +169,17 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 if (notExistsInNacos(allInstances, address, port)) {
                     Instance instance = buildSyncInstance(healthService, taskDO);
                     destNamingService.registerInstance(taskDO.getServiceName(), groupName, instance);
-                    log.error("consul-nacos-diff nacos 上不存在 serviceName {}, group {}, ip:port {}:{} 现在开始同步.",
+
+                    if (source == null) {
+                        source = clusterAccessService.findByClusterId(taskDO.getSourceClusterId());
+                    }
+
+                    if (dest == null) {
+                        dest = clusterAccessService.findByClusterId(taskDO.getDestClusterId());
+                    }
+
+                    log.error("consul-nacos-diff 源集群名: {}, 目标集群名: {}, nacos 上不存在 serviceName {}, group {}, ip:port {}:{} 现在开始同步.",
+                            source == null ? "" : source.getClusterName(), dest == null ? "" : dest.getClusterName(),
                             taskDO.getServiceName(), groupName, instance.getIp(), instance.getPort());
                 }
             }

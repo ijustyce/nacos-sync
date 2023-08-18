@@ -14,7 +14,6 @@ package com.alibaba.nacossync.extension.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.naming.NamingService;
-import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -22,12 +21,14 @@ import com.alibaba.nacossync.cache.SkyWalkerCacheServices;
 import com.alibaba.nacossync.constant.ClusterTypeEnum;
 import com.alibaba.nacossync.constant.MetricsStatisticsType;
 import com.alibaba.nacossync.constant.SkyWalkerConstants;
+import com.alibaba.nacossync.dao.ClusterAccessService;
 import com.alibaba.nacossync.extension.SyncService;
 import com.alibaba.nacossync.extension.annotation.NacosSyncService;
 import com.alibaba.nacossync.extension.event.SpecialSyncEventBus;
 import com.alibaba.nacossync.extension.holder.ConsulServerHolder;
 import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.monitor.MetricsManager;
+import com.alibaba.nacossync.pojo.model.ClusterDO;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.util.AlarmUtil;
 import com.alibaba.nacossync.util.ConsulUtils;
@@ -59,26 +60,23 @@ import org.springframework.util.CollectionUtils;
 @NacosSyncService(sourceCluster = ClusterTypeEnum.NACOS, destinationCluster = ClusterTypeEnum.CONSUL)
 public class NacosSyncToConsulServiceImpl implements SyncService {
     public static final String ID_DELIMITER = "-";
-
     private Map<String, EventListener> nacosListenerMap = new ConcurrentHashMap<>();
-
     private final MetricsManager metricsManager;
-
     private final SkyWalkerCacheServices skyWalkerCacheServices;
-
     private final NacosServerHolder nacosServerHolder;
     private final ConsulServerHolder consulServerHolder;
-
     private final SpecialSyncEventBus specialSyncEventBus;
+    private final ClusterAccessService clusterAccessService;
 
     public NacosSyncToConsulServiceImpl(MetricsManager metricsManager, SkyWalkerCacheServices skyWalkerCacheServices,
                                         NacosServerHolder nacosServerHolder, ConsulServerHolder consulServerHolder,
-                                        SpecialSyncEventBus specialSyncEventBus) {
+                                        SpecialSyncEventBus specialSyncEventBus, ClusterAccessService clusterAccessService) {
         this.metricsManager = metricsManager;
         this.skyWalkerCacheServices = skyWalkerCacheServices;
         this.nacosServerHolder = nacosServerHolder;
         this.consulServerHolder = consulServerHolder;
         this.specialSyncEventBus = specialSyncEventBus;
+        this.clusterAccessService = clusterAccessService;
     }
 
     @Override
@@ -161,6 +159,10 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
             Set<String> ip2PortSet =
                     healthServices.stream().map(x -> composeInstanceKey(x.getService().getAddress(),
                             x.getService().getPort())).collect(Collectors.toSet());
+
+            ClusterDO source = null;
+            ClusterDO dest = null;
+
             // 先将新的注册一遍
             for (Instance instance : sourceInstances) {
                 String ip2Port = composeInstanceKey(instance.getIp(), instance.getPort());
@@ -169,7 +171,17 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                     log.info("need sync ip:{} for taskId {}", ip2Port, taskDO.getTaskId());
                     instanceKeySet.add(ip2Port);
                     if(!ip2PortSet.contains(ip2Port)){
-                        log.error("nacos-consul-diff consul 上不存在 serviceName {}, group {}, ip:port {} taskId {} 现在开始同步.",
+
+                        if (source == null) {
+                            source = clusterAccessService.findByClusterId(taskDO.getSourceClusterId());
+                        }
+
+                        if (dest == null) {
+                            dest = clusterAccessService.findByClusterId(taskDO.getDestClusterId());
+                        }
+
+                        log.error("nacos-consul-diff 源集群名: {}, 目标集群名: {}, consul 上不存在 serviceName {}, group {}, ip:port {} taskId {} 现在开始同步.",
+                                source == null ? "" : source.getClusterName(), dest == null ? "" : dest.getClusterName(),
                                 taskDO.getServiceName(), taskDO.getGroupName(), ip2Port, taskDO.getTaskId());
                         registerService(consulClient,buildSyncInstance(instance, taskDO));
                         log.info("already sync ip:{} for taskId {}", ip2Port, taskDO.getTaskId());
@@ -184,10 +196,20 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 boolean notContain = !instanceKeySet.contains(composeInstanceKey(healthService.getService().getAddress(),
                         healthService.getService().getPort()));
                 if (needDelete && notContain) {
-                    log.error("nacos-consul-diff consul 上存在来自同步的节点 serviceName {}, group {}, ip:port {}:{} taskId {}" +
+
+                    if (source == null) {
+                        source = clusterAccessService.findByClusterId(taskDO.getSourceClusterId());
+                    }
+
+                    if (dest == null) {
+                        dest = clusterAccessService.findByClusterId(taskDO.getDestClusterId());
+                    }
+
+                    log.error("nacos-consul-diff 源集群名: {}, 目标集群名: {},  consul 上存在来自同步的节点 serviceName {}, group {}, ip:port {}:{} taskId {}" +
                                     "但是 nacos 上不存在该节点，现在删除它..",
-                            taskDO.getServiceName(), taskDO.getGroupName(),
-                            healthService.getService().getAddress(), healthService.getService().getPort(), taskDO.getTaskId());
+                            source == null ? "" : source.getClusterName(), dest == null ? "" : dest.getClusterName(),
+                            taskDO.getServiceName(), taskDO.getGroupName(), healthService.getService().getAddress(),
+                            healthService.getService().getPort(), taskDO.getTaskId());
                     deleteService(consulClient,healthService);
                 }
             }
