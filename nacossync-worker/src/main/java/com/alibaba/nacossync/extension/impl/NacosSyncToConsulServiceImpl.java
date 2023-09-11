@@ -284,6 +284,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 consulClient.agentServiceDeregister(encode);
             }catch (Exception e) {
                 log.error(e.getMessage(),e);
+                count++;
             }
         }
 
@@ -326,6 +327,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 Thread.sleep(50);
             }catch (Exception e) {
                 log.error(e.getMessage(),e);
+                count++;
             }
         }
 
