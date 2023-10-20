@@ -47,7 +47,7 @@ public class SkyWalkerConfiguration {
         }
 
         log.info("SkyWalker-Timer-schedule-pool core poll size {}", corePollSize);
-        return new ScheduledThreadPoolExecutor(corePollSize * 8, new BasicThreadFactory.Builder()
+        return new ScheduledThreadPoolExecutor(corePollSize, new BasicThreadFactory.Builder()
                 .namingPattern("SkyWalker-Timer-schedule-pool-%d").daemon(true).build());
     }
 
