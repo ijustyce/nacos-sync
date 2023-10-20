@@ -32,7 +32,7 @@ import com.alibaba.nacossync.extension.SyncManagerService;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 
 /**
  * @author NacosSync
@@ -65,14 +65,16 @@ public class EventListener {
     @Subscribe
     public void listenerSyncTaskEvent(SyncTaskEvent syncTaskEvent) {
         log.info("on SyncTaskEvent taskId {}", syncTaskEvent.getTaskDO().getTaskId());
+//        Future<?> future = threadPoolExecutor.submit(() -> {
         threadPoolExecutor.execute(() -> {
             log.info("sync for taskId {}", syncTaskEvent.getTaskDO().getTaskId());
             try {
                 long start = System.currentTimeMillis();
                 if (syncManagerService.sync(syncTaskEvent.getTaskDO())) {
-                    log.info("sysnc-finish {}", syncTaskEvent.getTaskDO().getTaskId());
                     skyWalkerCacheServices.addFinishedTask(syncTaskEvent.getTaskDO());
-                    metricsManager.record(MetricsStatisticsType.SYNC_TASK_RT, System.currentTimeMillis() - start);
+                    long takes = System.currentTimeMillis() - start;
+                    log.info("sync-finish {} takes {}", syncTaskEvent.getTaskDO().getTaskId(), takes);
+                    metricsManager.record(MetricsStatisticsType.SYNC_TASK_RT, takes);
                 } else {
                     log.warn("listenerSyncTaskEvent sync failure for taskId {}", syncTaskEvent.getTaskDO().getTaskId());
                 }
@@ -81,17 +83,30 @@ public class EventListener {
             }
         });
 
+//        try {
+//            future.get(30, TimeUnit.MINUTES);
+//        } catch (TimeoutException e) {
+//            log.error("listenerSyncTaskEvent-timeout", e);
+//            try {
+//                future.cancel(true);
+//            }catch (Exception ignore){}
+//        } catch (InterruptedException | ExecutionException e) {
+//            log.error("listenerSyncTaskEvent-Exception", e);
+//        }
+
     }
 
     @Subscribe
     public void listenerDeleteTaskEvent(DeleteTaskEvent deleteTaskEvent) {
-
+//        Future<?> future = threadPoolExecutor.submit(() -> {
         threadPoolExecutor.execute(() -> {
             try {
                 long start = System.currentTimeMillis();
                 if (syncManagerService.delete(deleteTaskEvent.getTaskDO())) {
                     skyWalkerCacheServices.addFinishedTask(deleteTaskEvent.getTaskDO());
-                    metricsManager.record(MetricsStatisticsType.DELETE_TASK_RT, System.currentTimeMillis() - start);
+                    long takes = System.currentTimeMillis() - start;
+                    log.info("delete-finish takes {}", takes);
+                    metricsManager.record(MetricsStatisticsType.DELETE_TASK_RT, takes);
                 } else {
                     log.warn("listenerDeleteTaskEvent delete failure");
                 }
@@ -100,6 +115,17 @@ public class EventListener {
             }
         });
 
+//        try {
+//            future.get(10, TimeUnit.MINUTES);
+//        } catch (TimeoutException e) {
+//            log.error("listenerDeleteTaskEvent-timeout", e);
+//            try {
+//                future.cancel(true);
+//            } catch (Exception ignore) {
+//            }
+//        } catch (InterruptedException | ExecutionException e) {
+//            log.error("listenerDeleteTaskEvent-Exception", e);
+//        }
     }
 
 }
