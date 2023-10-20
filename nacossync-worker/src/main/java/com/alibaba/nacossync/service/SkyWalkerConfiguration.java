@@ -18,6 +18,7 @@ package com.alibaba.nacossync.service;
 
 import java.util.concurrent.*;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +30,7 @@ import com.google.common.eventbus.EventBus;
  * @version $Id: SkyWalkerConfiguration.java, v 0.1 2018-09-27 AM1:20 NacosSync Exp $$
  */
 @Configuration
+@Slf4j
 public class SkyWalkerConfiguration {
 
     @Bean
@@ -39,7 +41,12 @@ public class SkyWalkerConfiguration {
     @Bean
     public ScheduledExecutorService executorService() {
         int corePollSize = Runtime.getRuntime().availableProcessors() + 1;
+        corePollSize = corePollSize * 8;
+        if (corePollSize < 32) {
+            corePollSize = 32;
+        }
 
+        log.info("SkyWalker-Timer-schedule-pool core poll size {}", corePollSize);
         return new ScheduledThreadPoolExecutor(corePollSize * 8, new BasicThreadFactory.Builder()
                 .namingPattern("SkyWalker-Timer-schedule-pool-%d").daemon(true).build());
     }
@@ -47,16 +54,20 @@ public class SkyWalkerConfiguration {
     @Bean
     public ThreadPoolExecutor threadPoolExecutor() {
         int corePollSize = Runtime.getRuntime().availableProcessors() + 1;
-
-        int maxPollSize = 8192;
-        BlockingQueue<Runnable> blockingQueue = new ArrayBlockingQueue<>(maxPollSize);
+        corePollSize = corePollSize * 8;
+        if (corePollSize < 32) {
+            corePollSize = 32;
+        }
+        BlockingQueue<Runnable> blockingQueue = new ArrayBlockingQueue<>(2048);
         RejectedExecutionHandler rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
         ThreadFactory threadFactory = r -> {
             Thread thread = new Thread(r);
-            thread.setName("nacos-sync-pool" + thread.getId());
+            thread.setName("nacos-sync-pool-" + thread.getId());
             return thread;
         };
-        return new ThreadPoolExecutor(8 * corePollSize, maxPollSize, 0, TimeUnit.MILLISECONDS,
+
+        log.info("nacos-sync-pool core poll size {}", corePollSize);
+        return new ThreadPoolExecutor(corePollSize, 256, 5, TimeUnit.MINUTES,
                 blockingQueue, threadFactory, rejectedExecutionHandler);
     }
 

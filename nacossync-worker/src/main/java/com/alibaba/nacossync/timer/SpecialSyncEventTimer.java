@@ -22,8 +22,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @author paderlol
@@ -42,9 +41,11 @@ public class SpecialSyncEventTimer implements CommandLineRunner {
     @Autowired
     private ScheduledExecutorService scheduledExecutorService;
 
+    @Autowired
+    private ThreadPoolExecutor threadPoolExecutor;
+
     @Override
     public void run(String... args) throws Exception {
-
         scheduledExecutorService.scheduleWithFixedDelay(new SpecialSyncEventTimer.SpecialSyncEventThread(), 0, 3000,
                 TimeUnit.MILLISECONDS);
     }
@@ -53,15 +54,23 @@ public class SpecialSyncEventTimer implements CommandLineRunner {
 
         @Override
         public void run() {
-            try {
+            Future<?> future = threadPoolExecutor.submit(() -> {
                 Collection<SpecialSyncEvent> allSpecialSyncEvent = specialSyncEventBus.getAllSpecialSyncEvent();
                 allSpecialSyncEvent.stream()
                         .filter(specialSyncEvent -> TaskStatusEnum.SYNC.getCode()
                                 .equals(specialSyncEvent.getTaskDO().getTaskStatus()))
                         .forEach(specialSyncEvent -> eventBus.post(specialSyncEvent));
-            } catch (Exception e) {
-                log.warn("SpecialSyncEventThread Exception", e);
-
+            });
+            try {
+                future.get(90, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                try {
+                    future.cancel(true);
+                } catch (Exception ignore) {
+                }
+                log.error("sync-timeout", e);
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("SpecialSyncEventThread error", e);
             }
         }
     }

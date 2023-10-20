@@ -38,10 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
@@ -72,6 +69,9 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
     @Autowired
     private NacosServerHolder nacosServerHolder;
 
+    @Autowired
+    private ThreadPoolExecutor threadPoolExecutor;
+
     private ConcurrentHashMap<String, TaskDO> allSyncTaskMap = new ConcurrentHashMap<String, TaskDO>();
 
     /**
@@ -98,11 +98,24 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
                             nacosServerHolder.get(taskDO.getSourceClusterId());
                     NamingService destNamingService =
                             nacosServerHolder.get(taskDO.getDestClusterId());
+                    Future<?> future = threadPoolExecutor.submit(() -> {
+                        try {
+                            doSync(taskId, taskDO, sourceNamingService, destNamingService);
+                        } catch (Exception e) {
+                            log.error("basic synctask process fail, taskId:{}", taskId, e);
+                            metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
+                        }
+                    });
                     try {
-                        doSync(taskId, taskDO, sourceNamingService, destNamingService);
-                    } catch (Exception e) {
-                        log.error("basic synctask process fail, taskId:{}", taskId, e);
-                        metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
+                        future.get(300, TimeUnit.SECONDS);
+                    } catch (TimeoutException e) {
+                        try {
+                            future.cancel(true);
+                        } catch (Exception ignore) {
+                        }
+                        log.error("sync-timeout", e);
+                    } catch (InterruptedException | ExecutionException e) {
+                        log.error("nacos-sync-to-nacos failed after 5 minutes", e);
                     }
                 }
             } catch (Throwable e) {
@@ -161,11 +174,24 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
             doSync(taskId, taskDO, sourceNamingService, destNamingService);
             this.listenerMap.putIfAbsent(taskId, event -> {
                 if (event instanceof NamingEvent) {
+                    Future<?> future = threadPoolExecutor.submit(() -> {
+                        try {
+                            doSync(taskId, taskDO, sourceNamingService, destNamingService, true);
+                        } catch (Exception e) {
+                            log.error("nacos-sync-to-nacos failed, taskId:{}", taskId, e);
+                            metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
+                        }
+                    });
                     try {
-                        doSync(taskId, taskDO, sourceNamingService, destNamingService, true);
-                    } catch (Exception e) {
-                        log.error("event process fail, taskId:{}", taskId, e);
-                        metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
+                        future.get(2, TimeUnit.MINUTES);
+                    } catch (TimeoutException e) {
+                        try {
+                            future.cancel(true);
+                        } catch (Exception ignore) {
+                        }
+                        log.error("sync-timeout", e);
+                    } catch (InterruptedException | ExecutionException e) {
+                        log.error("nacos-sync-to-nacos failed, taskId:{}", taskId, e);
                     }
                 }
             });

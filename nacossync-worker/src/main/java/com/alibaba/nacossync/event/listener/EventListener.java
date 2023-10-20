@@ -65,8 +65,7 @@ public class EventListener {
     @Subscribe
     public void listenerSyncTaskEvent(SyncTaskEvent syncTaskEvent) {
         log.info("on SyncTaskEvent taskId {}", syncTaskEvent.getTaskDO().getTaskId());
-//        Future<?> future = threadPoolExecutor.submit(() -> {
-        threadPoolExecutor.execute(() -> {
+        Future<?> future = threadPoolExecutor.submit(() -> {
             log.info("sync for taskId {}", syncTaskEvent.getTaskDO().getTaskId());
             try {
                 long start = System.currentTimeMillis();
@@ -83,23 +82,25 @@ public class EventListener {
             }
         });
 
-//        try {
-//            future.get(30, TimeUnit.MINUTES);
-//        } catch (TimeoutException e) {
-//            log.error("listenerSyncTaskEvent-timeout", e);
-//            try {
-//                future.cancel(true);
-//            }catch (Exception ignore){}
-//        } catch (InterruptedException | ExecutionException e) {
-//            log.error("listenerSyncTaskEvent-Exception", e);
-//        }
+        threadPoolExecutor.execute(() -> {
+            try {
+                future.get(60, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                log.error("listenerSyncTaskEvent-timeout", e);
+                try {
+                    future.cancel(true);
+                }catch (Exception ignore){}
+                log.error("sync-timeout", e);
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("listenerSyncTaskEvent-Exception", e);
+            }
+        });
 
     }
 
     @Subscribe
     public void listenerDeleteTaskEvent(DeleteTaskEvent deleteTaskEvent) {
-//        Future<?> future = threadPoolExecutor.submit(() -> {
-        threadPoolExecutor.execute(() -> {
+        Future<?> future = threadPoolExecutor.submit(() -> {
             try {
                 long start = System.currentTimeMillis();
                 if (syncManagerService.delete(deleteTaskEvent.getTaskDO())) {
@@ -115,17 +116,20 @@ public class EventListener {
             }
         });
 
-//        try {
-//            future.get(10, TimeUnit.MINUTES);
-//        } catch (TimeoutException e) {
-//            log.error("listenerDeleteTaskEvent-timeout", e);
-//            try {
-//                future.cancel(true);
-//            } catch (Exception ignore) {
-//            }
-//        } catch (InterruptedException | ExecutionException e) {
-//            log.error("listenerDeleteTaskEvent-Exception", e);
-//        }
+        threadPoolExecutor.execute(() -> {
+            try {
+                future.get(60, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                log.error("listenerDeleteTaskEvent-timeout", e);
+                try {
+                    future.cancel(true);
+                } catch (Exception ignore) {
+                }
+                log.error("sync-timeout", e);
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("listenerDeleteTaskEvent-Exception", e);
+            }
+        });
     }
 
 }

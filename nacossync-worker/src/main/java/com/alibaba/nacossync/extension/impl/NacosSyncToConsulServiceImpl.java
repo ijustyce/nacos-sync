@@ -47,7 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -68,16 +68,19 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
     private final ConsulServerHolder consulServerHolder;
     private final SpecialSyncEventBus specialSyncEventBus;
     private final ClusterAccessService clusterAccessService;
+    private final ThreadPoolExecutor threadPoolExecutor;
 
     public NacosSyncToConsulServiceImpl(MetricsManager metricsManager, SkyWalkerCacheServices skyWalkerCacheServices,
                                         NacosServerHolder nacosServerHolder, ConsulServerHolder consulServerHolder,
-                                        SpecialSyncEventBus specialSyncEventBus, ClusterAccessService clusterAccessService) {
+                                        SpecialSyncEventBus specialSyncEventBus, ClusterAccessService clusterAccessService,
+                                        ThreadPoolExecutor threadPoolExecutor) {
         this.metricsManager = metricsManager;
         this.skyWalkerCacheServices = skyWalkerCacheServices;
         this.nacosServerHolder = nacosServerHolder;
         this.consulServerHolder = consulServerHolder;
         this.specialSyncEventBus = specialSyncEventBus;
         this.clusterAccessService = clusterAccessService;
+        this.threadPoolExecutor = threadPoolExecutor;
     }
 
     @Override
@@ -121,7 +124,18 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
             EventListener listener = nacosListenerMap.computeIfAbsent(taskDO.getTaskId(), k -> event -> {
                 if (event instanceof NamingEvent) {
                     log.info("onNamingEvent doSync taskId is {}", taskDO.getTaskId());
-                    doSync(taskDO);
+                    Future<?> future = threadPoolExecutor.submit(() -> doSync(taskDO));
+                    try {
+                        future.get(2, TimeUnit.MINUTES);
+                    } catch (TimeoutException e) {
+                        try {
+                            future.cancel(true);
+                        } catch (Exception ignore) {
+                        }
+                        log.error("sync-timeout", e);
+                    } catch (InterruptedException | ExecutionException e) {
+                        log.error("nacos-sync-to-consul failed after 2 minutes", e);
+                    }
                 }
             });
 
