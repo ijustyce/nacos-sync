@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
@@ -84,21 +85,22 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         try {
             log.info("delete consul task id:{}", taskDO.getTaskId());
             NamingService sourceNamingService =
-                nacosServerHolder.get(taskDO.getSourceClusterId());
+                    nacosServerHolder.get(taskDO.getSourceClusterId());
             ConsulClient consulClient = consulServerHolder.get(taskDO.getDestClusterId());
 
             try {
                 sourceNamingService.unsubscribe(taskDO.getServiceName(),
                         NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), nacosListenerMap.get(taskDO.getTaskId()));
-            }catch (Exception ignore){}
+            } catch (Exception ignore) {
+            }
             Response<List<HealthService>> serviceResponse =
-                consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
+                    consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
             List<HealthService> healthServices = serviceResponse.getValue();
             for (HealthService healthService : healthServices) {
 
                 if (needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO)) {
                     consulClient.agentServiceDeregister(URLEncoder
-                        .encode(healthService.getService().getId(), StandardCharsets.UTF_8.name()));
+                            .encode(healthService.getService().getId(), StandardCharsets.UTF_8.name()));
                 }
             }
         } catch (Exception e) {
@@ -114,7 +116,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         log.info("nacos-to-consul taskId {}", taskDO.getTaskId());
         try {
             NamingService sourceNamingService =
-                nacosServerHolder.get(taskDO.getSourceClusterId());
+                    nacosServerHolder.get(taskDO.getSourceClusterId());
 
             EventListener listener = nacosListenerMap.computeIfAbsent(taskDO.getTaskId(), k -> event -> {
                 if (event instanceof NamingEvent) {
@@ -128,7 +130,8 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
 
             try {
                 sourceNamingService.unsubscribe(taskDO.getServiceName(), groupName, listener);
-            }catch (Exception ignore){}
+            } catch (Exception ignore) {
+            }
             log.info("unsubscribe for taskId {}", taskDO.getTaskId());
             sourceNamingService.subscribe(taskDO.getServiceName(), groupName, listener);
 
@@ -170,7 +173,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 if (needSync(instance.getMetadata())) {
                     log.info("need sync ip:{} for taskId {}", ip2Port, taskDO.getTaskId());
                     instanceKeySet.add(ip2Port);
-                    if(!ip2PortSet.contains(ip2Port)){
+                    if (!ip2PortSet.contains(ip2Port)) {
 
                         if (source == null) {
                             source = clusterAccessService.findByClusterId(taskDO.getSourceClusterId());
@@ -183,7 +186,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         log.error("nacos-consul-diff 源集群名: {}, 目标集群名: {}, consul 上不存在 serviceName {}, group {}, ip:port {} taskId {} 现在开始同步.",
                                 source == null ? "" : source.getClusterName(), dest == null ? "" : dest.getClusterName(),
                                 taskDO.getServiceName(), taskDO.getGroupName(), ip2Port, taskDO.getTaskId());
-                        registerService(consulClient,buildSyncInstance(instance, taskDO));
+                        registerService(consulClient, buildSyncInstance(instance, taskDO));
                         log.info("already sync ip:{} for taskId {}", ip2Port, taskDO.getTaskId());
                     }
 
@@ -210,7 +213,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                             source == null ? "" : source.getClusterName(), dest == null ? "" : dest.getClusterName(),
                             taskDO.getServiceName(), taskDO.getGroupName(), healthService.getService().getAddress(),
                             healthService.getService().getPort(), taskDO.getTaskId());
-                    deleteService(consulClient,healthService);
+                    deleteService(consulClient, healthService);
                 }
             }
         } catch (Exception e) {
@@ -234,10 +237,10 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         newService.setId(instance.getInstanceId());
         List<String> tags = Lists.newArrayList();
         tags.addAll(instance.getMetadata().entrySet().stream()
-            .map(entry -> String.join("=", entry.getKey(), entry.getValue())).collect(Collectors.toList()));
+                .map(entry -> String.join("=", entry.getKey(), entry.getValue())).collect(Collectors.toList()));
         tags.add(String.join("=", SkyWalkerConstants.DEST_CLUSTERID_KEY, taskDO.getDestClusterId()));
         tags.add(String.join("=", SkyWalkerConstants.SYNC_SOURCE_KEY,
-            skyWalkerCacheServices.getClusterType(taskDO.getSourceClusterId()).getCode()));
+                skyWalkerCacheServices.getClusterType(taskDO.getSourceClusterId()).getCode()));
         tags.add(String.join("=", SkyWalkerConstants.SOURCE_CLUSTERID_KEY, taskDO.getSourceClusterId()));
         newService.setTags(tags);
         return newService;
@@ -247,7 +250,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         return instance.getIp() + ID_DELIMITER + instance.getPort() + ID_DELIMITER + instance.getServiceName();
     }
 
-    private boolean deleteService(ConsulClient consulClient,HealthService healthService) {
+    private boolean deleteService(ConsulClient consulClient, HealthService healthService) {
         int count = 0;
         String serviceId = healthService.getService().getId();
         String encode = null;
@@ -273,25 +276,34 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 count++;
                 if (count > 10) {
                     log.error("Deregister failed");
-                    AlarmUtil.alarm("Deregister failed,serviceId:"+serviceId);
+                    AlarmUtil.alarm("Deregister failed,serviceId:" + serviceId);
                 }
                 if (count > 20) {
                     log.error("Deregister failed");
-                    AlarmUtil.alarm("Deregister failed,serviceId:"+serviceId);
+                    AlarmUtil.alarm("Deregister failed,serviceId:" + serviceId);
                     break;
                 }
                 Thread.sleep(50);
                 consulClient.agentServiceDeregister(encode);
-            }catch (Exception e) {
-                log.error(e.getMessage(),e);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
                 count++;
+                if (count > 10) {
+                    log.error("Deregister failed");
+                    AlarmUtil.alarm("Deregister failed,serviceId:" + serviceId);
+                }
+                if (count > 20) {
+                    log.error("Deregister failed");
+                    AlarmUtil.alarm("Deregister failed,serviceId:" + serviceId);
+                    break;
+                }
             }
         }
 
         return true;
     }
 
-    private boolean registerService(ConsulClient consulClient,NewService service) {
+    private boolean registerService(ConsulClient consulClient, NewService service) {
         int count = 0;
         String serviceId = service.getId();
         while (true) {
@@ -303,8 +315,8 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 List<HealthService> healthServices = serviceResponse.getValue();
                 if (CollectionUtils.isEmpty(healthServices)) {
                     if (count > 20) {
-                        log.error("Register failed,serviceId:{}",serviceId);
-                        AlarmUtil.alarm("Register failed,serviceId:"+serviceId);
+                        log.error("Register failed,serviceId:{}", serviceId);
+                        AlarmUtil.alarm("Register failed,serviceId:" + serviceId);
                         break;
                     }
                     continue;
@@ -316,18 +328,27 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 }
 
                 if (count > 10) {
-                    log.error("Register failed,serviceId:{}",serviceId);
-                    AlarmUtil.alarm("Register failed,serviceId:"+serviceId);
+                    log.error("Register failed,serviceId:{}", serviceId);
+                    AlarmUtil.alarm("Register failed,serviceId:" + serviceId);
                 }
                 if (count > 20) {
-                    log.error("Register failed,serviceId:{}",serviceId);
-                    AlarmUtil.alarm("Register failed,serviceId:"+serviceId);
+                    log.error("Register failed,serviceId:{}", serviceId);
+                    AlarmUtil.alarm("Register failed,serviceId:" + serviceId);
                     break;
                 }
                 Thread.sleep(50);
-            }catch (Exception e) {
-                log.error(e.getMessage(),e);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
                 count++;
+                if (count > 10) {
+                    log.error("Register failed,serviceId:{}", serviceId);
+                    AlarmUtil.alarm("Register failed,serviceId:" + serviceId);
+                }
+                if (count > 20) {
+                    log.error("Register failed,serviceId:{}", serviceId);
+                    AlarmUtil.alarm("Register failed,serviceId:" + serviceId);
+                    break;
+                }
             }
         }
 
