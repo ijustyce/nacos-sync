@@ -56,10 +56,11 @@ public class SkyWalkerConfiguration {
 
     @Bean
     public ThreadPoolExecutor threadPoolExecutor() {
-        int corePollSize = Runtime.getRuntime().availableProcessors() + 1;
+        int corePollSize = Runtime.getRuntime().availableProcessors();
+        log.info("nacos-sync-pool availableProcessors size {}", corePollSize);
         corePollSize = corePollSize * 8;
-        if (corePollSize < 32) {
-            corePollSize = 32;
+        if (corePollSize < 16) {
+            corePollSize = 16;
         }
         if (corePollSize > 64) {
             corePollSize = 64;
