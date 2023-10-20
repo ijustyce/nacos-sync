@@ -45,6 +45,9 @@ public class SkyWalkerConfiguration {
         if (corePollSize < 32) {
             corePollSize = 32;
         }
+        if (corePollSize > 128) {
+            corePollSize = 128;
+        }
 
         log.info("SkyWalker-Timer-schedule-pool core poll size {}", corePollSize);
         return new ScheduledThreadPoolExecutor(corePollSize, new BasicThreadFactory.Builder()
@@ -57,6 +60,9 @@ public class SkyWalkerConfiguration {
         corePollSize = corePollSize * 8;
         if (corePollSize < 32) {
             corePollSize = 32;
+        }
+        if (corePollSize > 128) {
+            corePollSize = 128;
         }
         BlockingQueue<Runnable> blockingQueue = new ArrayBlockingQueue<>(2048);
         RejectedExecutionHandler rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
