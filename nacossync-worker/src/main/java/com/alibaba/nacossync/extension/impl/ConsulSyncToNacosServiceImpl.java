@@ -102,10 +102,23 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
     @Override
     public boolean sync(TaskDO taskDO) {
         try {
+            doSync(taskDO);
+            specialSyncEventBus.subscribe(taskDO, this::doSync);
+        } catch (Exception e) {
+            log.error("Sync task from consul to nacos was failed, taskId:{}", taskDO.getTaskId(), e);
+            metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
+            return false;
+        }
+        return true;
+    }
+
+    public void doSync(TaskDO taskDO) {
+        long start = System.currentTimeMillis();
+        try {
             ConsulClient consulClient = consulServerHolder.get(taskDO.getSourceClusterId());
             NamingService destNamingService = nacosServerHolder.get(taskDO.getDestClusterId());
             Response<List<HealthService>> response =
-                consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
+                    consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
             List<HealthService> healthServiceList = response.getValue();
             log.info("sourec ip list:{}", JSON.toJSONString(healthServiceList));
             Set<String> instanceKeys = new HashSet<>();
@@ -115,9 +128,8 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
         } catch (Exception e) {
             log.error("Sync task from consul to nacos was failed, taskId:{}", taskDO.getTaskId(), e);
             metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
-            return false;
         }
-        return true;
+        log.info("doSync-finish takes {}", System.currentTimeMillis() - start);
     }
 
     private void cleanAllOldInstance(TaskDO taskDO, NamingService destNamingService, Set<String> instanceKeys)

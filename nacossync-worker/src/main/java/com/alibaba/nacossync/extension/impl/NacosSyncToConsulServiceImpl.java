@@ -146,6 +146,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
     }
 
     public void doSync(TaskDO taskDO) {
+        long start = System.currentTimeMillis();
         try {
             log.info("do-sync taskId {}.", taskDO.getTaskId());
             NamingService sourceNamingService =
@@ -220,6 +221,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
             log.error("event process fail, taskId:{}", taskDO.getTaskId(), e);
             metricsManager.recordError(MetricsStatisticsType.SYNC_ERROR);
         }
+        log.info("doSync-finish takes {}", System.currentTimeMillis() - start);
     }
 
     private String composeInstanceKey(String ip, int port) {
