@@ -45,8 +45,8 @@ public class SkyWalkerConfiguration {
         if (corePollSize < 32) {
             corePollSize = 32;
         }
-        if (corePollSize > 128) {
-            corePollSize = 128;
+        if (corePollSize > 64) {
+            corePollSize = 64;
         }
 
         log.info("SkyWalker-Timer-schedule-pool core poll size {}", corePollSize);
@@ -62,8 +62,8 @@ public class SkyWalkerConfiguration {
         if (corePollSize < 16) {
             corePollSize = 16;
         }
-        if (corePollSize > 128) {
-            corePollSize = 128;
+        if (corePollSize > 64) {
+            corePollSize = 64;
         }
         BlockingQueue<Runnable> blockingQueue = new ArrayBlockingQueue<>(2048);
         RejectedExecutionHandler rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
@@ -74,7 +74,7 @@ public class SkyWalkerConfiguration {
         };
 
         log.info("nacos-sync-pool core poll size {}", corePollSize);
-        return new ThreadPoolExecutor(corePollSize, 256, 5, TimeUnit.MINUTES,
+        return new ThreadPoolExecutor(corePollSize, 320, 5, TimeUnit.MINUTES,
                 blockingQueue, threadFactory, rejectedExecutionHandler);
     }
 
