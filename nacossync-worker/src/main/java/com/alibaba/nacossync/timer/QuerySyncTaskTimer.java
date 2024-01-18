@@ -67,27 +67,22 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
 
         @Override
         public void run() {
-
             Long start = System.currentTimeMillis();
             try {
-
                 Iterable<TaskDO> taskDOS = taskAccessService.findAll();
-
+                log.info("find-all-task and sync it.");
                 taskDOS.forEach(taskDO -> {
 
                     if ((null != skyWalkerCacheServices.getFinishedTask(taskDO))) {
-
                         return;
                     }
 
                     if (TaskStatusEnum.SYNC.getCode().equals(taskDO.getTaskStatus())) {
-
                         eventBus.post(new SyncTaskEvent(taskDO));
                         log.info("从数据库中查询到一个同步任务，发出一个同步事件:" + taskDO);
                     }
 
                     if (TaskStatusEnum.DELETE.getCode().equals(taskDO.getTaskStatus())) {
-
                         eventBus.post(new DeleteTaskEvent(taskDO));
                         log.info("从数据库中查询到一个删除任务，发出一个同步事件:" + taskDO);
                     }
