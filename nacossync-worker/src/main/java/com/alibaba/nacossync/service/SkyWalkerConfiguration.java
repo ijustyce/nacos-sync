@@ -74,7 +74,7 @@ public class SkyWalkerConfiguration {
         };
 
         log.info("nacos-sync-pool core poll size {}", corePollSize);
-        return new ThreadPoolExecutor(corePollSize, 64, 5, TimeUnit.MINUTES,
+        return new ThreadPoolExecutor(corePollSize, 256, 5, TimeUnit.MINUTES,
                 blockingQueue, threadFactory, rejectedExecutionHandler);
     }
 
