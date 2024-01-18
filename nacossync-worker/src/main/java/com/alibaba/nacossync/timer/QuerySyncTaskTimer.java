@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author NacosSync
@@ -70,9 +71,9 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
             Long start = System.currentTimeMillis();
             try {
                 Iterable<TaskDO> taskDOS = taskAccessService.findAll();
-                log.info("find-all-task and sync it.");
+                AtomicInteger size = new AtomicInteger();
                 taskDOS.forEach(taskDO -> {
-
+                    size.getAndIncrement();
                     if ((null != skyWalkerCacheServices.getFinishedTask(taskDO))) {
                         return;
                     }
@@ -87,6 +88,8 @@ public class QuerySyncTaskTimer implements CommandLineRunner {
                         log.info("从数据库中查询到一个删除任务，发出一个同步事件:" + taskDO);
                     }
                 });
+
+                log.info("find-all-task and sync it size is {}", size);
 
             } catch (Exception e) {
                 log.warn("CheckRunningStatusThread Exception", e);
