@@ -104,11 +104,14 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
             Response<List<HealthService>> serviceResponse =
                     consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
             List<HealthService> healthServices = serviceResponse.getValue();
+            log.info("delete-consul-result {}", healthServices);
             for (HealthService healthService : healthServices) {
-
                 if (needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO)) {
+                    log.info("do-delete-consul {}", healthService);
                     consulClient.agentServiceDeregister(URLEncoder
                             .encode(healthService.getService().getId(), StandardCharsets.UTF_8.name()));
+                } else {
+                    log.error("neeDelete is false taskDO {} tags {}", taskDO, healthService.getService().getTags());
                 }
             }
         } catch (Exception e) {

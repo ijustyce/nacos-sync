@@ -42,15 +42,12 @@ public class TaskDeleteProcessor implements Processor<TaskDeleteRequest, BaseRes
     @Autowired
     private EventBus eventBus;
     @Autowired
-    private SkyWalkerCacheServices skyWalkerCacheServices;
-    @Autowired
     private SpecialSyncEventBus specialSyncEventBus;
 
     @Override
     public void process(TaskDeleteRequest taskDeleteRequest, BaseResult baseResult,
                         Object... others) {
         TaskDO taskDO = taskAccessService.findByTaskId(taskDeleteRequest.getTaskId());
-        skyWalkerCacheServices.removeFinished(taskDO);
         eventBus.post(new DeleteTaskEvent(taskDO));
         specialSyncEventBus.unsubscribe(taskDO);
         log.info("删除同步任务数据之前，发出一个同步事件:" + taskDO);

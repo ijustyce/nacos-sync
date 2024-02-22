@@ -97,15 +97,6 @@ public class SkyWalkerCacheServices {
         return finishedTaskMap.get(operationId);
     }
 
-    public void removeFinished(TaskDO taskDO) {
-        String operationId = SkyWalkerUtil.getOperationId(taskDO);
-
-        if (StringUtils.isEmpty(operationId)) {
-            return;
-        }
-        finishedTaskMap.remove(operationId);
-    }
-
     public Map<String, FinishedTask> getFinishedTaskMap() {
 
         return finishedTaskMap;
