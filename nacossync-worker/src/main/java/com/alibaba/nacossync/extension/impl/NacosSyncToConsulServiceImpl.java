@@ -96,6 +96,11 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                         NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), nacosListenerMap.get(taskDO.getTaskId()));
             } catch (Exception ignore) {
             }
+
+            try {
+                specialSyncEventBus.unsubscribe(taskDO);
+            }catch (Exception ignore){}
+
             Response<List<HealthService>> serviceResponse =
                     consulClient.getHealthServices(taskDO.getServiceName(), true, QueryParams.DEFAULT);
             List<HealthService> healthServices = serviceResponse.getValue();
