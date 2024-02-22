@@ -108,8 +108,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
             for (HealthService healthService : healthServices) {
                 if (needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO)) {
                     log.info("do-delete-consul {}", healthService);
-                    consulClient.agentServiceDeregister(URLEncoder
-                            .encode(healthService.getService().getId(), StandardCharsets.UTF_8.name()));
+                    deleteService(consulClient, healthService);
                 } else {
                     log.error("neeDelete is false taskDO {} tags {}", taskDO, healthService.getService().getTags());
                 }
