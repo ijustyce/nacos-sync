@@ -284,7 +284,8 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         }
         while (true) {
             try {
-                consulClient.agentServiceDeregister(encode);
+                Response<Void> response = consulClient.agentServiceDeregister(encode);
+                log.info("delete-consul-response {}", response);
                 Response<List<HealthService>> serviceResponse =
                         consulClient.getHealthServices(healthService.getService().getService(), true, QueryParams.DEFAULT);
                 List<HealthService> healthServices = serviceResponse.getValue();
