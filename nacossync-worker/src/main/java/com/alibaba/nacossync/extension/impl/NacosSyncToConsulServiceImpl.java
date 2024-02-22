@@ -29,6 +29,7 @@ import com.alibaba.nacossync.extension.holder.ConsulServerHolder;
 import com.alibaba.nacossync.extension.holder.NacosServerHolder;
 import com.alibaba.nacossync.monitor.MetricsManager;
 import com.alibaba.nacossync.pojo.model.ClusterDO;
+import com.alibaba.nacossync.pojo.model.MyConsulService;
 import com.alibaba.nacossync.pojo.model.TaskDO;
 import com.alibaba.nacossync.util.AlarmUtil;
 import com.alibaba.nacossync.util.ConsulUtils;
@@ -249,8 +250,8 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         return ip + ":" + port;
     }
 
-    public NewService buildSyncInstance(Instance instance, TaskDO taskDO) {
-        NewService newService = new NewService();
+    public MyConsulService buildSyncInstance(Instance instance, TaskDO taskDO) {
+        MyConsulService newService = new MyConsulService();
         newService.setAddress(instance.getIp());
         newService.setPort(instance.getPort());
         newService.setName(taskDO.getServiceName());
@@ -266,6 +267,8 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
                 skyWalkerCacheServices.getClusterType(taskDO.getSourceClusterId()).getCode()));
         tags.add(String.join("=", SkyWalkerConstants.SOURCE_CLUSTERID_KEY, taskDO.getSourceClusterId()));
         newService.setTags(tags);
+        newService.setNode("pod-" + instance.getIp().replaceAll("\\.", "-"));
+        log.info("node is {}", newService.getNode());
         return newService;
     }
 
@@ -327,7 +330,7 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
         return true;
     }
 
-    private boolean registerService(ConsulClient consulClient, NewService service) {
+    private boolean registerService(ConsulClient consulClient, MyConsulService service) {
         int count = 0;
         String serviceId = service.getId();
         while (true) {
