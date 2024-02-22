@@ -23,6 +23,7 @@ import com.alibaba.nacossync.pojo.result.TaskListQueryResult;
 import com.alibaba.nacossync.template.SkyWalkerTemplate;
 import com.alibaba.nacossync.template.processor.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -96,7 +97,9 @@ public class TaskApi {
 
     @RequestMapping(path = "/v1/task/add", method = RequestMethod.POST)
     public BaseResult taskAdd(@RequestBody TaskAddRequest addTaskRequest) {
-
+        if (ObjectUtils.isEmpty(addTaskRequest.getGroupName())) {
+            addTaskRequest.setGroupName("DEFAULT_GROUP");
+        }
         return SkyWalkerTemplate.run(taskAddProcessor, addTaskRequest, new TaskAddResult());
     }
 
