@@ -43,16 +43,14 @@ import com.google.common.collect.Lists;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
 /**
  * @author zhanglong
@@ -106,8 +104,14 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
             List<HealthService> healthServices = serviceResponse.getValue();
             log.info("delete-consul-result {}", healthServices);
             for (HealthService healthService : healthServices) {
-                if (needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO)) {
+                Map<String, String> metaData = ConsulUtils.transferMetadata(healthService.getService().getTags());
+                if (needDelete(metaData, taskDO)) {
                     log.info("do-delete-consul {}", healthService);
+                    String nacosGroup = metaData.get("nacos_group");
+                    if (!ObjectUtils.isEmpty(nacosGroup) && !nacosGroup.equals(taskDO.getGroupName())) {
+                        log.warn("nacos group is {} task group is {} cancel delete", nacosGroup, taskDO.getGroupName());
+                        continue;
+                    }
                     deleteService(consulClient, healthService);
                 } else {
                     log.error("neeDelete is false taskDO {} tags {}", taskDO, healthService.getService().getTags());
@@ -217,7 +221,13 @@ public class NacosSyncToConsulServiceImpl implements SyncService {
 
             // 再将不存在的删掉
             for (HealthService healthService : healthServices) {
-                boolean needDelete = needDelete(ConsulUtils.transferMetadata(healthService.getService().getTags()), taskDO);
+                Map<String, String> metaData = ConsulUtils.transferMetadata(healthService.getService().getTags());
+                boolean needDelete = needDelete(metaData, taskDO);
+                String nacosGroup = metaData.get("nacos_group");
+                if (!ObjectUtils.isEmpty(nacosGroup) && !nacosGroup.equals(taskDO.getGroupName())) {
+                    log.warn("nacos group is {} task group is {} cancel delete", nacosGroup, taskDO.getGroupName());
+                    continue;
+                }
                 boolean notContain = !instanceKeySet.contains(composeInstanceKey(healthService.getService().getAddress(),
                         healthService.getService().getPort()));
                 if (needDelete && notContain) {
