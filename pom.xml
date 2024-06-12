@@ -62,12 +62,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <scope>provided</scope>
-                <version>1.18.2</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
