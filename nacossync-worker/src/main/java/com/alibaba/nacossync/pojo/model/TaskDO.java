@@ -73,4 +73,19 @@ public class TaskDO implements Serializable {
 
     @Transient
     private int ipCount;
+
+    public void setServiceName(String serviceName) {
+        if (serviceName != null) {
+            this.serviceName = serviceName.trim();
+        } else {
+            this.serviceName = null;
+        }
+    }
+
+    public String getServiceName() {
+        if (serviceName != null) {
+            return serviceName.trim();
+        }
+        return null;
+    }
 }
