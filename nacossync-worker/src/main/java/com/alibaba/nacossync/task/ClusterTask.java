@@ -70,11 +70,11 @@ public class ClusterTask implements CommandLineRunner {
 
     private void addAllCluster() {
         addCluster("fs-test-01", "nacos-test-fs.inshopline.com:6801", "");
-        addCluster("fs-test-01", "nacos-test-fs.inshopline.com:6801", "test");
-        addCluster("fs-test-01", "nacos-test-fs.inshopline.com:6801", "develop");
-        addCluster("fs-test-01", "nacos-test-fs.inshopline.com:6801", "local");
-        addCluster("fs-test-01", "nacos-test-fs.inshopline.com:6801", "press");
-        addCluster("fs-test-01", "nacos-test-fs.inshopline.com:6801", "sandbox");
+        addCluster("fs-test-01-test", "nacos-test-fs.inshopline.com:6801", "test");
+        addCluster("fs-test-01-deve", "nacos-test-fs.inshopline.com:6801", "develop");
+        addCluster("fs-test-01-local", "nacos-test-fs.inshopline.com:6801", "local");
+        addCluster("fs-test-01-press", "nacos-test-fs.inshopline.com:6801", "press");
+        addCluster("fs-test-01-sandbox", "nacos-test-fs.inshopline.com:6801", "sandbox");
     }
 
     private void addCluster(String name, String address, String namespace) {
