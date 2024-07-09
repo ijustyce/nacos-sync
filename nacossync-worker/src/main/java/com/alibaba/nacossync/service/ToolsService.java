@@ -124,10 +124,8 @@ public class ToolsService {
         ArrayNode arrayNode = (ArrayNode) objectNode.get("serviceList");
 
         for (JsonNode jsonNode : arrayNode) {
-            String serviceName;
-            int ipCount;
-            serviceName = jsonNode.get("name").asText();
-            ipCount = jsonNode.get("ipCount").asInt();
+            String serviceName = jsonNode.get("name").asText();
+            int ipCount = jsonNode.get("ipCount").asInt();
             if (ObjectUtils.isEmpty(serviceName)) {
                 String error = jsonNode.toPrettyString();
                 throw new RuntimeException("serviceName is empty: " + error);
@@ -135,6 +133,10 @@ public class ToolsService {
 
             if (ipCount < 1) {
                 log.warn("ipCount less than 1, serviceName is {}", serviceName);
+            }
+
+            if (serviceName.startsWith("consumers:")) {
+                continue;
             }
 
             String groupName = jsonNode.get("groupName").asText();
