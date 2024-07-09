@@ -37,28 +37,32 @@ public class ClusterTask implements CommandLineRunner {
     public void run(String... args) throws Exception {
         addAllCluster();
 
-        beginAsync("fs-test-01", "fs-loong-01");
-        beginAsync("fs-test-01-test", "fs-loong-01-test");
-        beginAsync("fs-test-01-deve", "fs-loong-01-deve");
-        beginAsync("fs-test-01-local", "fs-loong-01-local");
-        beginAsync("fs-test-01-press", "fs-loong-01-press");
-        beginAsync("fs-test-0-sandbox1", "fs-loong-01-sandbox");
-        beginAsync("fs-test-01-sl-ecom-old-test", "fs-loong-01-sl-ecom-old-test");
-        beginAsync("fs-test-01-sl-ecom-new-test", "fs-loong-01-sl-ecom-new-test");
-        beginAsync("fs-test-01-sl-ecom-new-dev", "fs-loong-01-sl-ecom-new-dev");
-        beginAsync("fs-test-01-tester-test", "fs-loong-01-tester-test");
-        beginAsync("fs-test-01-sl-jdp", "fs-loong-01-sl-jdp");
-        beginAsync("fs-test-01-data_platform", "fs-loong-01-data_platform");
-        beginAsync("fs-test-01-sl-ecom-shopify-test", "fs-loong-01-sl-ecom-shopify-test");
-        beginAsync("fs-test-01-ecom-others-test", "fs-loong-01-ecom-others-test");
-        beginAsync("fs-test-01-slp-local", "fs-loong-01-slp-local");
-        beginAsync("fs-test-01-slp-test", "fs-loong-01-slp-test");
-        beginAsync("fs-test-01-slp-develop", "fs-loong-01-slp-develop");
-        beginAsync("fs-test-01-ecom-open-test", "fs-loong-01-ecom-open-test");
-        beginAsync("fs-test-01-slp-sandbox", "fs-loong-01-slp-sandbox");
-        beginAsync("fs-test-01-sale-press", "fs-loong-01-sale-press");
-        beginAsync("fs-test-01-sales-af-press", "fs-loong-01-sales-af-press");
-        beginAsync("fs-test-01-product-press", "fs-loong-01-product-press");
+        beginAsyncToNacos("fs-test-01", "fs-loong-01");
+        beginAsyncToNacos("fs-test-01-test", "fs-loong-01-test");
+        beginAsyncToNacos("fs-test-01-deve", "fs-loong-01-deve");
+        beginAsyncToNacos("fs-test-01-local", "fs-loong-01-local");
+        beginAsyncToNacos("fs-test-01-press", "fs-loong-01-press");
+        beginAsyncToNacos("fs-test-0-sandbox1", "fs-loong-01-sandbox");
+        beginAsyncToNacos("fs-test-01-sl-ecom-old-test", "fs-loong-01-sl-ecom-old-test");
+        beginAsyncToNacos("fs-test-01-sl-ecom-new-test", "fs-loong-01-sl-ecom-new-test");
+        beginAsyncToNacos("fs-test-01-sl-ecom-new-dev", "fs-loong-01-sl-ecom-new-dev");
+        beginAsyncToNacos("fs-test-01-tester-test", "fs-loong-01-tester-test");
+        beginAsyncToNacos("fs-test-01-sl-jdp", "fs-loong-01-sl-jdp");
+        beginAsyncToNacos("fs-test-01-data_platform", "fs-loong-01-data_platform");
+        beginAsyncToNacos("fs-test-01-sl-ecom-shopify-test", "fs-loong-01-sl-ecom-shopify-test");
+        beginAsyncToNacos("fs-test-01-ecom-others-test", "fs-loong-01-ecom-others-test");
+        beginAsyncToNacos("fs-test-01-slp-local", "fs-loong-01-slp-local");
+        beginAsyncToNacos("fs-test-01-slp-test", "fs-loong-01-slp-test");
+        beginAsyncToNacos("fs-test-01-slp-develop", "fs-loong-01-slp-develop");
+        beginAsyncToNacos("fs-test-01-ecom-open-test", "fs-loong-01-ecom-open-test");
+        beginAsyncToNacos("fs-test-01-slp-sandbox", "fs-loong-01-slp-sandbox");
+        beginAsyncToNacos("fs-test-01-sale-press", "fs-loong-01-sale-press");
+        beginAsyncToNacos("fs-test-01-sales-af-press", "fs-loong-01-sales-af-press");
+        beginAsyncToNacos("fs-test-01-product-press", "fs-loong-01-product-press");
+    }
+
+    private void beginAsyncToNacos(String sourceClusterName, String destClusterName) {
+        beginAsync(destClusterName, sourceClusterName);
     }
 
     private void beginAsync(String sourceClusterName, String destClusterName) {
