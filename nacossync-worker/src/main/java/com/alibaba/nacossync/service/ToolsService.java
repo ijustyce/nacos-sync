@@ -1,6 +1,7 @@
 package com.alibaba.nacossync.service;
 
 import com.alibaba.nacossync.cache.SkyWalkerCacheServices;
+import com.alibaba.nacossync.constant.SkyWalkerConstants;
 import com.alibaba.nacossync.constant.TaskStatusEnum;
 import com.alibaba.nacossync.dao.ClusterAccessService;
 import com.alibaba.nacossync.dao.TaskAccessService;
@@ -40,7 +41,6 @@ public class ToolsService {
     private final ClusterAccessService clusterAccessService;
     private final SkyWalkerCacheServices skyWalkerCacheServices;
     private final ScheduledExecutorService scheduledService;
-    private final AtomicBoolean withInstance = new AtomicBoolean(true);
 
     public ToolsService(EventBus eventBus, HttpService httpService, TaskAccessService taskAccessService,
                         ClusterAccessService clusterAccessService,
@@ -81,13 +81,12 @@ public class ToolsService {
         String destServices = serviceInfo(destCluster);
         String sourceServices = serviceInfo(sourceCluster);
 
+        //  目标集群的 task
         ArrayList<TaskDO> destTasks = servicesToTask(destServices, sourceClusterId, destClusterId);
+        //  源集群的 task
         ArrayList<TaskDO> sourceTasks = servicesToTask(sourceServices, sourceClusterId, destClusterId);
 
         log.info("sources task count {}, destTasks count {}", sourceTasks.size(), destTasks.size());
-        if (!ObjectUtils.isEmpty(sourceTasks) && !ObjectUtils.isEmpty(destTasks)) {
-            withInstance.set(false);
-        }
 
         syncToDest(sourceTasks, destTasks);
         syncToSource(sourceTasks, destTasks);
@@ -289,8 +288,7 @@ public class ToolsService {
             return null;
         }
         String urlPath = "/nacos/v1/ns/catalog/services?hasIpCount=true&pageNo=1&pageSize=1000000" +
-                "&serviceNameParam=&groupNameParam=&namespaceId=" + clusterDO.getNamespace() + "&withInstances="
-                + withInstance.get();
+                "&serviceNameParam=&groupNameParam=&namespaceId=" + clusterDO.getNamespace() + "&withInstances=false";
         String result = httpService.httpGet("http://" + hosts.get(0) + urlPath);
         if (ObjectUtils.isEmpty(result)) {
             return null;
@@ -310,29 +308,14 @@ public class ToolsService {
 
         ArrayList<TaskDO> tasks = new ArrayList<>();
         ObjectMapper objectMapper = new ObjectMapper();
-        ArrayNode arrayNode;
-        if (withInstance.get()) {
-            arrayNode = (ArrayNode) objectMapper.readTree(json);
-        } else {
-            ObjectNode objectNode = (ObjectNode) objectMapper.readTree(json);
-            arrayNode = (ArrayNode) objectNode.get("serviceList");
-        }
+        ObjectNode objectNode = (ObjectNode) objectMapper.readTree(json);
+        ArrayNode arrayNode = (ArrayNode) objectNode.get("serviceList");
 
         for (JsonNode jsonNode : arrayNode) {
-            Pair<Boolean, Integer> pair = fetchSyncInfo(jsonNode);
-            if (pair.getFirst()) {
-                continue;
-            }
-
             String serviceName;
             int ipCount;
-            if (jsonNode.has("name")) {
-                serviceName = jsonNode.get("name").asText();
-                ipCount = jsonNode.get("ipCount").asInt();
-            } else {
-                serviceName = jsonNode.get("serviceName").asText();
-                ipCount = pair.getSecond();
-            }
+            serviceName = jsonNode.get("name").asText();
+            ipCount = jsonNode.get("ipCount").asInt();
             if (ObjectUtils.isEmpty(serviceName)) {
                 String error = jsonNode.toPrettyString();
                 throw new RuntimeException("serviceName is empty: " + error);
@@ -349,32 +332,6 @@ public class ToolsService {
             tasks.add(taskDO);
         }
         return tasks;
-    }
-
-    private Pair<Boolean, Integer> fetchSyncInfo(JsonNode jsonNode) {
-        if (!jsonNode.has("clusterMap")) {
-            return Pair.of(false, 0);
-        }
-        JsonNode clusterMap = jsonNode.get("clusterMap");
-        Iterator<JsonNode> elements = clusterMap.elements();
-        boolean result = false;
-        int ipCount = 0;
-        while (elements.hasNext()) {
-            JsonNode cluster = elements.next();
-            ArrayNode hosts = (ArrayNode) cluster.get("hosts");
-            for (JsonNode host : hosts) {
-                //  如果是从 nacos 同步的则返回 true
-                JsonNode metadata = host.get("metadata");
-                if (metadata != null) {
-                    JsonNode syncSource = metadata.get("syncSource");
-                    if (syncSource != null && "NACOS".equals(syncSource.asText())) {
-                        result = true;
-                    }
-                }
-                ipCount++;
-            }
-        }
-        return Pair.of(result, ipCount);
     }
 
     private TaskDO generateTask(String serviceName, String groupName, String sourceClusterId, String destClusterId) throws Exception {
