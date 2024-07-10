@@ -110,6 +110,7 @@ public class SkyWalkerUtil {
         sb.append(addClusterRequest.getClusterName());
         sb.append(SkyWalkerConstants.UNDERLINE);
         sb.append(addClusterRequest.getClusterType());
+        sb.append(System.currentTimeMillis());
 
         return SkyWalkerUtil.StringToMd5(sb.toString());
     }
