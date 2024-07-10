@@ -22,7 +22,7 @@ package com.alibaba.nacossync.constant;
  */
 public class SkyWalkerConstants {
 
-    public static final  String UNDERLINE            = "_";
+    public static final  String UNDERLINE            = "@@";
 
     public static final  String DEST_CLUSTERID_KEY   = "loongDestClusterId";
     public static final  String GROUP_NAME           = "groupName";
