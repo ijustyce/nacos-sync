@@ -48,8 +48,8 @@ public class NacosServerHolder extends AbstractServerHolderImpl<NamingService> {
         ClusterDO clusterDO = clusterAccessService.findByClusterId(clusterId);
         String serverList = Joiner.on(",").join(allClusterConnectKey);
         Properties properties = new Properties();
-        properties.put(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT, clusterDO.getHeartbeatThreads());
-        properties.put(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT, clusterDO.getPullThreadCount());
+        properties.put(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT, "" + clusterDO.getHeartbeatThreads());
+        properties.put(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT, "" + clusterDO.getPullThreadCount());
         log.info("create-nacos-client heartbeatThread {} pullThread {}",
                 properties.get(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
                 properties.get(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT));

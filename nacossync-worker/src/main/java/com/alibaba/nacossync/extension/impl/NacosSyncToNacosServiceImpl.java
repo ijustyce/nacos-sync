@@ -275,7 +275,6 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
                             buildSyncInstance(instance, taskDO));
                 }
                 latestSyncInstance.add(instanceKey);
-
             }
         }
         if (CollectionUtils.isNotEmpty(latestSyncInstance)) {

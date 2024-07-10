@@ -59,11 +59,11 @@ public class SkyWalkerConfiguration {
         int corePollSize = Runtime.getRuntime().availableProcessors();
         log.info("nacos-sync-pool availableProcessors size {}", corePollSize);
         corePollSize = corePollSize * 8;
-        if (corePollSize < 16) {
-            corePollSize = 16;
+        if (corePollSize < 64) {
+            corePollSize = 32;
         }
-        if (corePollSize > 64) {
-            corePollSize = 64;
+        if (corePollSize > 128) {
+            corePollSize = 128;
         }
         BlockingQueue<Runnable> blockingQueue = new ArrayBlockingQueue<>(2048);
         RejectedExecutionHandler rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
