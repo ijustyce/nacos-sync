@@ -4,6 +4,8 @@ create table cluster
     cluster_id       varchar(255),
     cluster_name     varchar(255),
     cluster_type     varchar(255),
+    heartbeat_threads integer,
+    pull_thread_count integer,
     connect_key_list varchar(255),
     namespace        varchar(255),
     password         varchar(255),
