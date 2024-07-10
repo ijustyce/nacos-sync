@@ -42,6 +42,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
+import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
@@ -244,8 +245,14 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
         }
         try {
             // 直接从本地保存的serviceInfoMap中取订阅的服务实例
-            List<Instance> sourceInstances = sourceNamingService.getAllInstances(taskDO.getServiceName(),
+            List<Instance> tmp = sourceNamingService.getAllInstances(taskDO.getServiceName(),
                     getGroupNameOrDefault(taskDO.getGroupName()), new ArrayList<>(), true);
+            List<Instance> sourceInstances = new ArrayList<>();
+            for (Instance instance : tmp) {
+                if (shouldSync(taskDO, instance.getMetadata())) {
+                    sourceInstances.add(instance);
+                }
+            }
             // 先删除不存在的
             this.removeInvalidInstance(taskDO, destNamingService, sourceInstances);
             // 如果同步实例已经为空代表该服务所有实例已经下线,清除本地持有快照
