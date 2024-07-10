@@ -53,7 +53,8 @@ public class NacosServerHolder extends AbstractServerHolderImpl<NamingService> {
         log.info("create-nacos-client heartbeatThread {} pullThread {}",
                 properties.get(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
                 properties.get(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT));
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
+        properties.setProperty(PropertyKeyConst.ENDPOINT, serverList);
+        properties.setProperty(PropertyKeyConst.ENDPOINT_PORT, "6801");
         properties.setProperty(PropertyKeyConst.NAMESPACE, Optional.ofNullable(clusterDO.getNamespace()).orElse(
             Strings.EMPTY));
         Optional.ofNullable(clusterDO.getUserName()).ifPresent(value ->
