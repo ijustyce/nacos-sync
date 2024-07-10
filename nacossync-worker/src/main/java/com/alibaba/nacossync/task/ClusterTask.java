@@ -62,6 +62,7 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void beginAsyncToNacos(String sourceClusterName, String destClusterName) {
+        beginAsync(sourceClusterName, destClusterName);
         beginAsync(destClusterName, sourceClusterName);
     }
 

@@ -44,6 +44,7 @@ import javax.annotation.PostConstruct;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 /**
  * @author yangyshdan
@@ -142,8 +143,7 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
                     .getAllInstances(taskDO.getServiceName(), getGroupNameOrDefault(taskDO.getGroupName()),
                             new ArrayList<>(), false);
             for (Instance instance : sourceInstances) {
-                //  needSync 为 true 时，该服务不是从其他集群同步过来的
-                if (needSync(instance.getMetadata())) {
+                if (!isFromSync(taskDO, instance.getMetadata())) {
                     log.info("服务 {}, ip {} port {} 不能反注册，因为不是来自同步的任务！", taskDO.getServiceName(),
                             instance.getIp(), instance.getPort());
                 } else {
@@ -160,6 +160,32 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
             return false;
         }
         return true;
+    }
+
+    /**
+     * 判断当前服务是否是从目标集群同步过来的，如果是，不再同步，避免双向同步
+     */
+    private boolean shouldSync(TaskDO taskDO, Map<String, String> metadata) {
+        String sourceSyncClusterId = metadata.get(SkyWalkerConstants.SOURCE_CLUSTERID_KEY);
+        if (StringUtils.hasText(sourceSyncClusterId)) {
+            if (sourceSyncClusterId.equals(taskDO.getDestClusterId())) {
+                log.warn("cancel sync {} this service sync from cluster {}, so cancel sync to {}", taskDO.getServiceName(),
+                        sourceSyncClusterId, taskDO.getDestClusterId());
+                return false;
+            }
+            if (sourceSyncClusterId.equals(taskDO.getSourceClusterId())) {
+                log.error("{} sync from current cluster {} it self ?", taskDO.getServiceName(), sourceSyncClusterId);
+            }
+        }
+        return true;
+    }
+
+    private boolean isFromSync(TaskDO taskDO, Map<String, String> metadata) {
+        String sourceSyncClusterId = metadata.get(SkyWalkerConstants.SOURCE_CLUSTERID_KEY);
+        if (StringUtils.hasText(sourceSyncClusterId)) {
+            return sourceSyncClusterId.equals(taskDO.getSourceClusterId());
+        }
+        return false;
     }
 
     @Override
@@ -241,7 +267,7 @@ public class NacosSyncToNacosServiceImpl implements SyncService {
         String taskId = taskDO.getTaskId();
         Set<String> instanceKeys = sourceInstanceSnapshot.get(taskId);
         for (Instance instance : sourceInstances) {
-            if (needSync(instance.getMetadata())) {
+            if (shouldSync(taskDO, instance.getMetadata())) {
                 String instanceKey = composeInstanceKey(instance);
                 if (CollectionUtils.isEmpty(instanceKeys) || !instanceKeys.contains(instanceKey)) {
                     destNamingService.registerInstance(taskDO.getServiceName(),
