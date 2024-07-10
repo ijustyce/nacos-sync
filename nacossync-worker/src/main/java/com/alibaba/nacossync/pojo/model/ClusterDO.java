@@ -55,6 +55,10 @@ public class ClusterDO implements Serializable {
      */
     private String clusterType;
 
+    private Integer heartbeatThreads;
+
+    private Integer pullThreadCount;
+
     /**
      * The username of the Nacos.
      *

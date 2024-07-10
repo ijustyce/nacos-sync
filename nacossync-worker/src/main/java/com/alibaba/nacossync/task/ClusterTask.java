@@ -177,6 +177,13 @@ public class ClusterTask implements CommandLineRunner {
         clusterDO.setUserName(clusterAddRequest.getUserName());
         clusterDO.setPassword(clusterAddRequest.getPassword());
         clusterDO.setNamespace(clusterAddRequest.getNamespace());
+        if ("develop".equals(clusterAddRequest.getNamespace()) || "test".equals(clusterAddRequest.getNamespace())) {
+            clusterDO.setHeartbeatThreads(32);
+            clusterDO.setPullThreadCount(16);
+        } else {
+            clusterDO.setHeartbeatThreads(4);
+            clusterDO.setPullThreadCount(2);
+        }
         clusterAccessService.insert(clusterDO);
     }
 }
