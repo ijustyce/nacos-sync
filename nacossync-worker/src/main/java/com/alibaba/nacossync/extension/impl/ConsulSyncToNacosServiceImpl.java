@@ -178,10 +178,18 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 int port = healthService.getService().getPort();
                 instanceKeys.add(composeInstanceKey(address, port));
 
+                Instance nacosInstance = findNacosInstance(allInstances, address, port);
+                if (nacosInstance != null) {
+                    Map<String, String> metadata = nacosInstance.getMetadata();
+                    if (metadata == null || !metadata.containsKey(SkyWalkerConstants.SOURCE_CLUSTERID_KEY)) {
+                        continue;
+                    }
+                }
+
                 Instance instance = buildSyncInstance(healthService, taskDO);
                 destNamingService.registerInstance(taskDO.getServiceName(), groupName, instance);
-                //  如果不在 nacos 里，则同步
-                if (notExistsInNacos(allInstances, address, port)) {
+                //  如果不在 nacos 里，则告警出来，同步是一定要去同步的
+                if (nacosInstance == null) {
                     if (source == null) {
                         source = clusterAccessService.findByClusterId(taskDO.getSourceClusterId());
                     }
@@ -198,9 +206,9 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
         }
     }
 
-    private boolean notExistsInNacos(List<Instance> allInstances, String ip, int port) {
+    private Instance findNacosInstance(List<Instance> allInstances, String ip, int port) {
         if (ObjectUtils.isEmpty(allInstances)) {
-            return true;
+            return null;
         }
 
         for (Instance instance : allInstances) {
@@ -208,11 +216,11 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 continue;
             }
             if (ip.equals(instance.getIp()) && port == instance.getPort()) {
-                return false;
+                return instance;
             }
         }
 
-        return true;
+        return null;
     }
 
     private Instance buildSyncInstance(HealthService instance, TaskDO taskDO) {
