@@ -177,11 +177,11 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 String address = healthService.getService().getAddress();
                 int port = healthService.getService().getPort();
                 instanceKeys.add(composeInstanceKey(address, port));
+
+                Instance instance = buildSyncInstance(healthService, taskDO);
+                destNamingService.registerInstance(taskDO.getServiceName(), groupName, instance);
                 //  如果不在 nacos 里，则同步
                 if (notExistsInNacos(allInstances, address, port)) {
-                    Instance instance = buildSyncInstance(healthService, taskDO);
-                    destNamingService.registerInstance(taskDO.getServiceName(), groupName, instance);
-
                     if (source == null) {
                         source = clusterAccessService.findByClusterId(taskDO.getSourceClusterId());
                     }
