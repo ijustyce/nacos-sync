@@ -31,7 +31,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 public class NacosSyncMain {
 
     public static void main(String[] args) {
-
+        System.setProperty("nacos.logging.default.config.enabled", "false");
         SpringApplication.run(NacosSyncMain.class, args);
     }
 }
