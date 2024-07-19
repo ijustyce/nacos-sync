@@ -196,10 +196,11 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                     log.info("instanceKey {}", instanceKey);
                     continue;
                 }
-                syncedService.put(instanceKey, true);
 
                 Instance instance = buildSyncInstance(healthService, taskDO);
                 destNamingService.registerInstance(taskDO.getServiceName(), groupName, instance);
+                syncedService.put(instanceKey, true);
+
                 //  如果不在 nacos 里，则告警出来，同步是一定要去同步的
                 if (nacosInstance == null) {
                     if (source == null) {
