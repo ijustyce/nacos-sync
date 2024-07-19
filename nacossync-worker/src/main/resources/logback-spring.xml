@@ -10,15 +10,41 @@
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>200MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
-            <!--只保留最近30个日志文件，约6G-->
-            <maxHistory>30</maxHistory>
+            <!--只保留最近10个日志文件，约2G-->
+            <maxHistory>10</maxHistory>
             <!--用来指定日志文件的上限大小，那么到了这个值，就会删除旧的日志-->
-            <totalSizeCap>5GB</totalSizeCap>
+            <totalSizeCap>2GB</totalSizeCap>
         </rollingPolicy>
         <append>true</append>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %thread %-5level %logger Line:%-3L - %msg%n</pattern>
             <charset>utf-8</charset>
+        </encoder>
+    </appender>
+
+    <!--nacos sdk 日志输出-->
+    <appender name="fileNacos" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--日志名称，如果没有File 属性，那么只会使用FileNamePattern的文件路径规则
+        如果同时有<File>和<FileNamePattern>，那么当天日志是<File>，明天会自动把今天
+        的日志改名为今天的日期。即，<File> 的日志都是当天的。
+        -->
+        <File>${logback.logdir}/${logback.appname}-nacos-sdk.log</File>
+        <!--滚动策略，按照时间滚动 TimeBasedRollingPolicy-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!--文件路径,定义了日志的切分方式——把每一天的日志归档到一个文件中,以防止日志填满整个磁盘空间-->
+            <FileNamePattern>${logback.logdir}/${logback.appname}-nacos-sdk.%d{yyyy-MM-dd}.%i.log</FileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <!--只保留最近7天的日志-->
+            <maxHistory>7</maxHistory>
+            <!--用来指定日志文件的上限大小，那么到了这个值，就会删除旧的日志-->
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <!--日志输出编码格式化-->
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %thread %level (%file:%line\) - %m%n</pattern>
         </encoder>
     </appender>
 
@@ -35,6 +61,12 @@
     <logger name="org.hibernate.SQL" level="INFO"/>
     <logger name="org.hibernate.engine.QueryParameters" level="INFO"/>
     <logger name="org.hibernate.engine.query.HQLQueryPlan" level="INFO"/>
+
+    <logger name="com.alibaba.nacos.client.naming" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="fileNacos"/>
+    </logger>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
