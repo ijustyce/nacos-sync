@@ -40,6 +40,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
@@ -61,6 +63,8 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
     private final NacosServerHolder nacosServerHolder;
     private final ClusterAccessService clusterAccessService;
     private final SpecialSyncEventBus specialSyncEventBus;
+
+    private final ConcurrentHashMap<String, Boolean> syncedService = new ConcurrentHashMap<>();
 
     @Autowired
     public ConsulSyncToNacosServiceImpl(ConsulServerHolder consulServerHolder,
@@ -185,6 +189,14 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                         continue;
                     }
                 }
+
+                String instanceKey = taskDO.getTaskId() + "@@" + healthService.getService().getAddress()
+                        + "_" + healthService.getService().getPort();
+                if (syncedService.containsKey(instanceKey)) {
+                    log.info("instanceKey {}", instanceKey);
+                    continue;
+                }
+                syncedService.put(instanceKey, true);
 
                 Instance instance = buildSyncInstance(healthService, taskDO);
                 destNamingService.registerInstance(taskDO.getServiceName(), groupName, instance);
