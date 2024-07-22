@@ -194,7 +194,7 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                         + "_" + healthService.getService().getPort();
                 if (syncedService.containsKey(instanceKey)) {
                     log.info("instanceKey {} exists return now", instanceKey);
-                    //continue;
+                    continue;
                 }
 
                 Instance instance = buildSyncInstance(healthService, taskDO);
