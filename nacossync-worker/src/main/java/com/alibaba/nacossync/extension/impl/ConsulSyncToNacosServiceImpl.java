@@ -193,13 +193,14 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 String instanceKey = taskDO.getTaskId() + "@@" + healthService.getService().getAddress()
                         + "_" + healthService.getService().getPort();
                 if (syncedService.containsKey(instanceKey)) {
-                    log.info("instanceKey {}", instanceKey);
-                    continue;
+                    log.info("instanceKey {} exists return now", instanceKey);
+                   // continue;
                 }
 
                 Instance instance = buildSyncInstance(healthService, taskDO);
                 destNamingService.registerInstance(taskDO.getServiceName(), groupName, instance);
                 syncedService.put(instanceKey, true);
+                log.info("instanceKey {} not exists put to map", instanceKey);
 
                 //  如果不在 nacos 里，则告警出来，同步是一定要去同步的
                 if (nacosInstance == null) {
