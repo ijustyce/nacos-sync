@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ThreadUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.ObjectUtils;
 
@@ -89,6 +90,8 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()));
             for (Instance instance : allInstances) {
                 if (needDelete(instance.getMetadata(), taskDO)) {
+                    String instanceKey = taskDO.getTaskId() + "@@" + instance.getIp() + "_" + instance.getPort();
+                    syncedService.remove(instanceKey);
 
                     destNamingService.deregisterInstance(taskDO.getServiceName(),
                         NacosUtils.getGroupNameOrDefault(taskDO.getGroupName()), instance.getIp(), instance.getPort());
@@ -149,6 +152,9 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 && !instanceKeys.contains(composeInstanceKey(instance.getIp(), instance.getPort()))) {
                 log.info("remove to nacos old ip:{}",instance.getIp());
                 log.info("remove to nacos groupName:{}",groupName);
+                String instanceKey = taskDO.getTaskId() + "@@" + instance.getIp() + "_" + instance.getPort();
+                syncedService.remove(instanceKey);
+
                 destNamingService.deregisterInstance(taskDO.getServiceName(),
                         groupName, instance.getIp(), instance.getPort());
                 log.info("remove to nacos taskInfo:{}",JSON.toJSONString(taskDO));
@@ -201,6 +207,9 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 destNamingService.registerInstance(taskDO.getServiceName(), groupName, instance);
                 syncedService.put(instanceKey, true);
                 log.info("instanceKey {} not exists put to map", instanceKey);
+                try {
+                    Thread.sleep(3000);
+                }catch (Exception ignore){}
 
                 //  如果不在 nacos 里，则告警出来，同步是一定要去同步的
                 if (nacosInstance == null) {
