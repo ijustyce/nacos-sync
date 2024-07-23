@@ -199,8 +199,12 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                 String instanceKey = taskDO.getTaskId() + "@@" + healthService.getService().getAddress()
                         + "_" + healthService.getService().getPort();
                 if (syncedService.containsKey(instanceKey)) {
-                    log.info("instanceKey {} exists return now", instanceKey);
-                    continue;
+                    if (nacosInstance != null) {
+                        log.info("instanceKey {} exists return now", instanceKey);
+                        continue;
+                    } else {
+                        log.info("this-must-be-a-bug cache exists but nacos instance not exists register instance now");
+                    }
                 }
 
                 Instance instance = buildSyncInstance(healthService, taskDO);
