@@ -79,12 +79,12 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
-        addCluster("nacos-xjp-prev", "nacos-xjp-prev.inshopline.com", "preview");
-        addCluster("nacos-xjp-prev_ecom_old", "nacos-xjp-prev.inshopline.com", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
-        addCluster("nacos-xjp-prev_ecom_new", "nacos-xjp-prev.inshopline.com", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-        addCluster("nacos-xjp-prev_sf", "nacos-xjp-prev.inshopline.com", "sl-ecom-sf-preview");
-        addCluster("nacos-xjp-prev_ot", "nacos-xjp-prev.inshopline.com", "sl-ecom-ot-preview");
-        addCluster("nacos-xjp-prev_slp", "nacos-xjp-prev.inshopline.com", "slp-preview");
+        addCluster("nacos-xjp-prev", "10.90.208.85", "preview");
+        addCluster("nacos-xjp-prev_ecom_old", "10.90.209.73", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
+        addCluster("nacos-xjp-prev_ecom_new", "10.90.210.32", "f0082435-ea66-4662-aead-6935e0d5bd9c");
+        addCluster("nacos-xjp-prev_sf", "10.90.210.32", "sl-ecom-sf-preview");
+        addCluster("nacos-xjp-prev_ot", "10.90.209.73", "sl-ecom-ot-preview");
+        addCluster("nacos-xjp-prev_slp", "10.90.209.73", "slp-preview");
 
         addCluster("loong-xjp-prev", "loong-xjp-preview.inshopline.com", "preview");
         addCluster("loong-xjp-prev_ecom_old", "loong-xjp-preview.inshopline.com", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
