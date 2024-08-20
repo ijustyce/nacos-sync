@@ -36,29 +36,13 @@ public class ClusterTask implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         addAllCluster();
-
-        beginAsyncToNacos("fs-test-01", "fs-loong-01");
-        beginAsyncToNacos("fs-test-01-test", "fs-loong-01-test");
-        beginAsyncToNacos("fs-test-01-deve", "fs-loong-01-deve");
-        beginAsyncToNacos("fs-test-01-local", "fs-loong-01-local");
-        beginAsyncToNacos("fs-test-01-press", "fs-loong-01-press");
-        beginAsyncToNacos("fs-test-0-sandbox1", "fs-loong-01-sandbox");
-        beginAsyncToNacos("fs-test-01-sl-ecom-old-test", "fs-loong-01-sl-ecom-old-test");
-        beginAsyncToNacos("fs-test-01-sl-ecom-new-test", "fs-loong-01-sl-ecom-new-test");
-        beginAsyncToNacos("fs-test-01-sl-ecom-new-dev", "fs-loong-01-sl-ecom-new-dev");
-        beginAsyncToNacos("fs-test-01-tester-test", "fs-loong-01-tester-test");
-        beginAsyncToNacos("fs-test-01-sl-jdp", "fs-loong-01-sl-jdp");
-        beginAsyncToNacos("fs-test-01-data_platform", "fs-loong-01-data_platform");
-        beginAsyncToNacos("fs-test-01-sl-ecom-shopify-test", "fs-loong-01-sl-ecom-shopify-test");
-        beginAsyncToNacos("fs-test-01-ecom-others-test", "fs-loong-01-ecom-others-test");
-        beginAsyncToNacos("fs-test-01-slp-local", "fs-loong-01-slp-local");
-        beginAsyncToNacos("fs-test-01-slp-test", "fs-loong-01-slp-test");
-        beginAsyncToNacos("fs-test-01-slp-develop", "fs-loong-01-slp-develop");
-        beginAsyncToNacos("fs-test-01-ecom-open-test", "fs-loong-01-ecom-open-test");
-        beginAsyncToNacos("fs-test-01-slp-sandbox", "fs-loong-01-slp-sandbox");
-        beginAsyncToNacos("fs-test-01-sale-press", "fs-loong-01-sale-press");
-        beginAsyncToNacos("fs-test-01-sales-af-press", "fs-loong-01-sales-af-press");
-        beginAsyncToNacos("fs-test-01-product-press", "fs-loong-01-product-press");
+        beginAsyncToNacos("nacos-xjp-prev", "loong-xjp-prev");
+        beginAsyncToNacos("nacos-xjp-prev_ecom_old", "loong-xjp-prev_ecom_old");
+        beginAsyncToNacos("nacos-xjp-prev_ecom_new", "loong-xjp-prev_ecom_new");
+        beginAsyncToNacos("nacos-xjp-prev_sf", "loong-xjp-prev_sf");
+        beginAsyncToNacos("nacos-xjp-prev_ot", "loong-xjp-prev_ot");
+        beginAsyncToNacos("nacos-xjp-prev_slp", "loong-xjp-prev_slp");
+        beginAsyncToNacos("nacos-xjp-prev_self", "loong-xjp-prev_self");
     }
 
     private void beginAsyncToNacos(String sourceClusterName, String destClusterName) {
@@ -95,57 +79,21 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
-        addCluster("fs-test-01", "10.98.64.84", "");
-        addCluster("fs-test-01-test", "10.98.64.84", "test");
-        addCluster("fs-test-01-deve", "10.98.64.84", "develop");
-        addCluster("fs-test-01-local", "10.98.64.84", "local");
-        addCluster("fs-test-01-press", "10.98.64.84", "press");
-        addCluster("fs-test-01-sandbox", "10.98.64.84", "sandbox");
-        addCluster("fs-test-01-sl-ecom-old-test", "10.98.64.84",
-                "68364d5e-c6e0-4012-b6d2-c9106a688932");
-        addCluster("fs-test-01-sl-ecom-new-test", "10.98.64.84",
-                "21ffcfab-d33d-4764-97ad-94de7f64493d");
-        addCluster("fs-test-01-sl-ecom-new-dev", "10.98.64.84",
-                "4636c623-93b6-472b-8d48-f482aed74c98");
-        addCluster("fs-test-01-tester-test", "10.98.64.84", "tester-test");
-        addCluster("fs-test-01-sl-jdp", "10.98.64.84", "sl-jdp");
-        addCluster("fs-test-01-data_platform", "10.98.64.84", "data_platform");
-        addCluster("fs-test-01-sl-ecom-shopify-test", "10.98.64.84", "7758344d-2c6b-487e-8eed-c78b97fc1f1f");
-        addCluster("fs-test-01-sl-ecom-others-test", "10.98.64.84", "bcdbf3ec-b0f4-4d8e-9156-36a3c19dc2e2");
-        addCluster("fs-test-01-slp-local", "10.98.64.84", "slp-local");
-        addCluster("fs-test-01-slp-test", "10.98.64.84", "slp-test");
-        addCluster("fs-test-01-slp-develop", "10.98.64.84", "slp-develop");
-        addCluster("fs-test-01-sl-ecom-open-test", "10.98.64.84", "8209e0ba-d4d7-41a0-b8e3-4c96e2faf15e");
-        addCluster("fs-test-01-slp-sandbox", "10.98.64.84", "slp-sandbox");
-        addCluster("fs-test-01-sale-press", "10.98.64.84", "sale-press");
-        addCluster("fs-test-01-sales-af-press", "10.98.64.84", "sales-af-press");
-        addCluster("fs-test-01-product-press", "10.98.64.84", "product-press");
+        addCluster("nacos-xjp-prev", "nacos-xjp-prev.inshopline.com:6802", "preview");
+        addCluster("nacos-xjp-prev_ecom_old", "nacos-xjp-prev.inshopline.com:6802", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
+        addCluster("nacos-xjp-prev_ecom_new", "nacos-xjp-prev.inshopline.com:6802", "f0082435-ea66-4662-aead-6935e0d5bd9c");
+        addCluster("nacos-xjp-prev_sf", "nacos-xjp-prev.inshopline.com:6802", "sl-ecom-sf-preview");
+        addCluster("nacos-xjp-prev_ot", "nacos-xjp-prev.inshopline.com:6802", "sl-ecom-ot-preview");
+        addCluster("nacos-xjp-prev_slp", "nacos-xjp-prev.inshopline.com:6802", "slp-preview");
+        addCluster("nacos-xjp-prev_self", "nacos-xjp-prev.inshopline.com:6802", "self_check");
 
-        addCluster("fs-loong-01", "10.98.64.94", "");
-        addCluster("fs-loong-01-test", "10.98.64.94", "test");
-        addCluster("fs-loong-01-deve", "10.98.64.94", "develop");
-        addCluster("fs-loong-01-local", "10.98.64.94", "local");
-        addCluster("fs-loong-01-press", "10.98.64.94", "press");
-        addCluster("fs-loong-01-sandbox", "10.98.64.94", "sandbox");
-        addCluster("fs-loong-01-sl-ecom-old-test", "10.98.64.94",
-                "68364d5e-c6e0-4012-b6d2-c9106a688932");
-        addCluster("fs-loong-01-sl-ecom-new-test", "10.98.64.94",
-                "21ffcfab-d33d-4764-97ad-94de7f64493d");
-        addCluster("fs-loong-01-sl-ecom-new-dev", "10.98.64.94",
-                "4636c623-93b6-472b-8d48-f482aed74c98");
-        addCluster("fs-loong-01-tester-test", "10.98.64.94", "tester-test");
-        addCluster("fs-loong-01-sl-jdp", "10.98.64.94", "sl-jdp");
-        addCluster("fs-loong-01-data_platform", "10.98.64.94", "data_platform");
-        addCluster("fs-loong-01-sl-ecom-shopify-test", "10.98.64.94", "7758344d-2c6b-487e-8eed-c78b97fc1f1f");
-        addCluster("fs-loong-01-sl-ecom-others-test", "10.98.64.94", "bcdbf3ec-b0f4-4d8e-9156-36a3c19dc2e2");
-        addCluster("fs-loong-01-slp-local", "10.98.64.94", "slp-local");
-        addCluster("fs-loong-01-slp-test", "10.98.64.94", "slp-test");
-        addCluster("fs-loong-01-slp-develop", "10.98.64.94", "slp-develop");
-        addCluster("fs-loong-01-sl-ecom-open-test", "10.98.64.94", "8209e0ba-d4d7-41a0-b8e3-4c96e2faf15e");
-        addCluster("fs-loong-01-slp-sandbox", "10.98.64.94", "slp-sandbox");
-        addCluster("fs-loong-01-sale-press", "10.98.64.94", "sale-press");
-        addCluster("fs-loong-01-sales-af-press", "10.98.64.94", "sales-af-press");
-        addCluster("fs-loong-01-product-press", "10.98.64.94", "product-press");
+        addCluster("loong-xjp-prev", "10.86.188.145:6802", "preview");
+        addCluster("loong-xjp-prev_ecom_old", "10.86.48.15:6802", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
+        addCluster("loong-xjp-prev_ecom_new", "10.86.48.15:6802", "f0082435-ea66-4662-aead-6935e0d5bd9c");
+        addCluster("loong-xjp-prev_sf", "10.86.48.15:6802", "sl-ecom-sf-preview");
+        addCluster("loong-xjp-prev_ot", "10.86.48.15:6802", "sl-ecom-ot-preview");
+        addCluster("loong-xjp-prev_slp", "10.86.48.15:6802", "slp-preview");
+        addCluster("loong-xjp-prev_self", "10.86.91.235:6802", "self_check");
     }
 
     private void addCluster(String name, String address, String namespace) {
