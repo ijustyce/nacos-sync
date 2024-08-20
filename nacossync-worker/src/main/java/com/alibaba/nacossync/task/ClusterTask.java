@@ -85,15 +85,13 @@ public class ClusterTask implements CommandLineRunner {
         addCluster("nacos-xjp-prev_sf", "nacos-xjp-prev.inshopline.com", "sl-ecom-sf-preview");
         addCluster("nacos-xjp-prev_ot", "nacos-xjp-prev.inshopline.com", "sl-ecom-ot-preview");
         addCluster("nacos-xjp-prev_slp", "nacos-xjp-prev.inshopline.com", "slp-preview");
-        addCluster("nacos-xjp-prev_self", "nacos-xjp-prev.inshopline.com", "self_check");
 
-        addCluster("loong-xjp-prev", "10.86.188.145", "preview");
-        addCluster("loong-xjp-prev_ecom_old", "10.86.48.15", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
-        addCluster("loong-xjp-prev_ecom_new", "10.86.48.15", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-        addCluster("loong-xjp-prev_sf", "10.86.48.15", "sl-ecom-sf-preview");
-        addCluster("loong-xjp-prev_ot", "10.86.48.15", "sl-ecom-ot-preview");
-        addCluster("loong-xjp-prev_slp", "10.86.48.15", "slp-preview");
-        addCluster("loong-xjp-prev_self", "10.86.91.235", "self_check");
+        addCluster("loong-xjp-prev", "loong-xjp-preview.inshopline.com", "preview");
+        addCluster("loong-xjp-prev_ecom_old", "loong-xjp-preview.inshopline.com", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
+        addCluster("loong-xjp-prev_ecom_new", "loong-xjp-preview.inshopline.com", "f0082435-ea66-4662-aead-6935e0d5bd9c");
+        addCluster("loong-xjp-prev_sf", "loong-xjp-preview.inshopline.com", "sl-ecom-sf-preview");
+        addCluster("loong-xjp-prev_ot", "loong-xjp-preview.inshopline.com", "sl-ecom-ot-preview");
+        addCluster("loong-xjp-prev_slp", "loong-xjp-preview.inshopline.com", "slp-preview");
     }
 
     private void addCluster(String name, String address, String namespace) {
