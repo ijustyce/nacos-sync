@@ -36,13 +36,13 @@ public class ClusterTask implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         addAllCluster();
-        beginAsyncToNacos("nacos-xjp-prev", "loong-xjp-prev");
-        beginAsyncToNacos("nacos-xjp-prev_ecom_old", "loong-xjp-prev_ecom_old");
-        beginAsyncToNacos("nacos-xjp-prev_ecom_new", "loong-xjp-prev_ecom_new");
-        beginAsyncToNacos("nacos-xjp-prev_sf", "loong-xjp-prev_sf");
-        beginAsyncToNacos("nacos-xjp-prev_ot", "loong-xjp-prev_ot");
-        beginAsyncToNacos("nacos-xjp-prev_slp", "loong-xjp-prev_slp");
-        beginAsyncToNacos("nacos-xjp-prev_self", "loong-xjp-prev_self");
+        beginAsyncToNacos("nacos-fjny-prev", "loong-fjny-prev");
+        beginAsyncToNacos("nacos-fjny-prev_ecom_old", "loong-fjny-prev_ecom_old");
+        beginAsyncToNacos("nacos-fjny-prev_ecom_new", "loong-fjny-prev_ecom_new");
+        beginAsyncToNacos("nacos-fjny-prev_sf", "loong-fjny-prev_sf");
+        beginAsyncToNacos("nacos-fjny-prev_ot", "loong-fjny-prev_ot");
+        beginAsyncToNacos("nacos-fjny-prev_slp", "loong-fjny-prev_slp");
+        beginAsyncToNacos("nacos-fjny-prev_self", "loong-fjny-prev_self");
     }
 
     private void beginAsyncToNacos(String sourceClusterName, String destClusterName) {
@@ -79,19 +79,17 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
-        addCluster("nacos-xjp-prev", "10.90.208.85", "preview");
-        addCluster("nacos-xjp-prev_ecom_old", "10.90.209.73", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
-        addCluster("nacos-xjp-prev_ecom_new", "10.90.210.32", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-        addCluster("nacos-xjp-prev_sf", "10.90.210.32", "sl-ecom-sf-preview");
-        addCluster("nacos-xjp-prev_ot", "10.90.209.73", "sl-ecom-ot-preview");
-        addCluster("nacos-xjp-prev_slp", "10.90.209.73", "slp-preview");
+        addCluster("nacos-fjny-prev", "10.92.208.253", "preview");
+        addCluster("nacos-fjny-prod", "10.92.209.20", "product");
+        addCluster("nacos-fjny-ai_prev", "10.92.209.20", "ai_preview");
+        addCluster("nacos-fjny-ai_prod", "10.92.209.20", "ai_product");
+        addCluster("nacos-fjny-slp_prev", "10.92.209.20", "slp-preview");
 
-        addCluster("loong-xjp-prev", "loong-xjp-preview.inshopline.com", "preview");
-        addCluster("loong-xjp-prev_ecom_old", "loong-xjp-preview.inshopline.com", "2bc5e976-cdb3-4fe4-a781-93de2367c72d");
-        addCluster("loong-xjp-prev_ecom_new", "loong-xjp-preview.inshopline.com", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-        addCluster("loong-xjp-prev_sf", "loong-xjp-preview.inshopline.com", "sl-ecom-sf-preview");
-        addCluster("loong-xjp-prev_ot", "loong-xjp-preview.inshopline.com", "sl-ecom-ot-preview");
-        addCluster("loong-xjp-prev_slp", "loong-xjp-preview.inshopline.com", "slp-preview");
+        addCluster("loong-fjny-prev", "10.92.210.181", "preview");
+        addCluster("loong-fjny-prod", "10.84.22.69", "product");
+        addCluster("loong-fjny-ai_prev", "10.84.22.69", "ai_preview");
+        addCluster("loong-fjny-ai_prod", "10.84.22.69", "ai_product");
+        addCluster("loong-fjny-slp_prev", "10.84.22.69", "slp-preview");
     }
 
     private void addCluster(String name, String address, String namespace) {
