@@ -36,13 +36,12 @@ public class ClusterTask implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         addAllCluster();
+
         beginAsyncToNacos("nacos-fjny-prev", "loong-fjny-prev");
-        beginAsyncToNacos("nacos-fjny-prev_ecom_old", "loong-fjny-prev_ecom_old");
-        beginAsyncToNacos("nacos-fjny-prev_ecom_new", "loong-fjny-prev_ecom_new");
-        beginAsyncToNacos("nacos-fjny-prev_sf", "loong-fjny-prev_sf");
-        beginAsyncToNacos("nacos-fjny-prev_ot", "loong-fjny-prev_ot");
-        beginAsyncToNacos("nacos-fjny-prev_slp", "loong-fjny-prev_slp");
-        beginAsyncToNacos("nacos-fjny-prev_self", "loong-fjny-prev_self");
+        beginAsyncToNacos("nacos-fjny-prod", "loong-fjny-prod");
+        beginAsyncToNacos("nacos-fjny-ai_prev", "loong-fjny-ai_prev");
+        beginAsyncToNacos("nacos-fjny-ai_prod", "loong-fjny-ai_prod");
+        beginAsyncToNacos("nacos-fjny-slp_prev", "loong-fjny-slp_prev");
     }
 
     private void beginAsyncToNacos(String sourceClusterName, String destClusterName) {
