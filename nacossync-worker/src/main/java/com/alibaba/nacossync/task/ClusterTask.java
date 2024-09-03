@@ -37,17 +37,8 @@ public class ClusterTask implements CommandLineRunner {
     public void run(String... args) throws Exception {
         addAllCluster();
 
-        beginAsyncToNacos("nacos-xjp", "loong-xjp");
-        beginAsyncToNacos("nacos-xjp_prod", "loong-xjp_prod");
-        beginAsyncToNacos("nacos-xjp_ecom_old", "loong-xjp_ecom_old");
-        beginAsyncToNacos("nacos-xjp_ecom_new", "loong-xjp_ecom_new");
-        beginAsyncToNacos("nacos-xjp_ecom_new_prev", "loong-xjp_ecom_new_prev");
-        beginAsyncToNacos("nacos-xjp_sl_jdp", "loong-xjp_sl_jdp");
-        beginAsyncToNacos("nacos-xjp_data_platform", "loong-xjp_data_platform");
-        beginAsyncToNacos("nacos-xjp_ecom_sf", "loong-xjp_ecom_sf");
-        beginAsyncToNacos("nacos-xjp_ecom_ot", "loong-xjp_ecom_ot");
-        beginAsyncToNacos("nacos-xjp_slp_product", "loong-xjp_slp_product");
-        beginAsyncToNacos("nacos-xjp_ecom_webhook", "loong-xjp_ecom_webhook");
+        beginAsyncToNacos("nacos-fjny", "loong-fjny");
+        beginAsyncToNacos("nacos-fjny-slp", "loong-fjny-slp");
     }
 
     private void beginAsyncToNacos(String sourceClusterName, String destClusterName) {
@@ -84,29 +75,11 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
-        addCluster("nacos-xjp", "10.90.209.207", "");
-        addCluster("nacos-xjp_prod", "10.90.210.254", "product");
-        addCluster("nacos-xjp_ecom_old", "10.90.216.208", "d5d75bd7-935e-4057-af25-126a946b321f");
-        addCluster("nacos-xjp_ecom_new", "10.90.216.208", "7164b7c1-28f0-4d87-9ed2-6a30bdd706cc");
-        addCluster("nacos-xjp_ecom_new_prev", "10.90.216.208", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-        addCluster("nacos-xjp_sl_jdp", "10.90.216.208", "sl-jdp");
-        addCluster("nacos-xjp_data_platform", "10.90.216.208", "data_platform");
-        addCluster("nacos-xjp_ecom_sf", "10.90.216.208", "sl-ecom-sf-prod");
-        addCluster("nacos-xjp_ecom_ot", "10.90.216.208", "sl-ecom-ot-prod");
-        addCluster("nacos-xjp_slp_product", "10.90.216.208", "slp-product");
-        addCluster("nacos-xjp_ecom_webhook", "10.90.216.208", "sl-ecom-new-prod-webhook");
+        addCluster("nacos-fjny", "10.92.209.4", "product");
+        addCluster("nacos-fjny-slp", "10.92.210.63", "slp-product");
 
-        addCluster("loong-xjp", "10.90.208.85", "");
-        addCluster("loong-xjp_prod", "10.90.209.73", "product");
-        addCluster("loong-xjp_ecom_old", "10.90.210.32", "d5d75bd7-935e-4057-af25-126a946b321f");
-        addCluster("loong-xjp_ecom_new", "10.90.210.32", "7164b7c1-28f0-4d87-9ed2-6a30bdd706cc");
-        addCluster("loong-xjp_ecom_new_prev", "10.90.210.32", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-        addCluster("loong-xjp_sl_jdp", "10.90.210.32", "sl-jdp");
-        addCluster("loong-xjp_data_platform", "10.90.210.32", "data_platform");
-        addCluster("loong-xjp_ecom_sf", "10.90.210.32", "sl-ecom-sf-prod");
-        addCluster("loong-xjp_ecom_ot", "10.90.210.32", "sl-ecom-ot-prod");
-        addCluster("loong-xjp_slp_product", "10.90.210.32", "slp-product");
-        addCluster("loong-xjp_ecom_webhook", "10.90.210.32", "sl-ecom-new-prod-webhook");
+        addCluster("loong-fjny", "10.84.22.69", "product");
+        addCluster("loong-fjny-slp", "10.92.210.181", "slp-product");
     }
 
     private void addCluster(String name, String address, String namespace) {
