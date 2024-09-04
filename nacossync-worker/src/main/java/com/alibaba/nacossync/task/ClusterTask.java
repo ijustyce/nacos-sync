@@ -51,8 +51,8 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void beginAsyncToNacos(String sourceClusterName, String destClusterName) {
-        beginAsync(sourceClusterName, destClusterName);
         beginAsync(destClusterName, sourceClusterName);
+        beginAsync(sourceClusterName, destClusterName);
     }
 
     private void beginAsync(String sourceClusterName, String destClusterName) {
@@ -84,29 +84,29 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
-        addCluster("nacos-xjp", "10.90.209.207", "");
-        addCluster("nacos-xjp_prod", "10.90.210.254", "product");
-        addCluster("nacos-xjp_ecom_old", "10.90.216.208", "d5d75bd7-935e-4057-af25-126a946b321f");
-        addCluster("nacos-xjp_ecom_new", "10.90.216.208", "7164b7c1-28f0-4d87-9ed2-6a30bdd706cc");
-        addCluster("nacos-xjp_ecom_new_prev", "10.90.216.208", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-        addCluster("nacos-xjp_sl_jdp", "10.90.216.208", "sl-jdp");
-        addCluster("nacos-xjp_data_platform", "10.90.216.208", "data_platform");
-        addCluster("nacos-xjp_ecom_sf", "10.90.216.208", "sl-ecom-sf-prod");
-        addCluster("nacos-xjp_ecom_ot", "10.90.216.208", "sl-ecom-ot-prod");
-        addCluster("nacos-xjp_slp_product", "10.90.216.208", "slp-product");
-        addCluster("nacos-xjp_ecom_webhook", "10.90.216.208", "sl-ecom-new-prod-webhook");
+        addCluster("nacos-xjp", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "");
+        addCluster("nacos-xjp_prod", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "product");
+        addCluster("nacos-xjp_ecom_old", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "d5d75bd7-935e-4057-af25-126a946b321f");
+        addCluster("nacos-xjp_ecom_new", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "7164b7c1-28f0-4d87-9ed2-6a30bdd706cc");
+        addCluster("nacos-xjp_ecom_new_prev", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "f0082435-ea66-4662-aead-6935e0d5bd9c");
+        addCluster("nacos-xjp_sl_jdp", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "sl-jdp");
+        addCluster("nacos-xjp_data_platform", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "data_platform");
+        addCluster("nacos-xjp_ecom_sf", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "sl-ecom-sf-prod");
+        addCluster("nacos-xjp_ecom_ot", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "sl-ecom-ot-prod");
+        addCluster("nacos-xjp_slp_product", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "slp-product");
+        addCluster("nacos-xjp_ecom_webhook", "nacos-xjp-v3-0-2f27655bf16702c8.elb.ap-southeast-1.amazonaws.com", "sl-ecom-new-prod-webhook");
 
-        addCluster("loong-xjp", "10.90.208.85", "");
-        addCluster("loong-xjp_prod", "10.90.209.73", "product");
-        addCluster("loong-xjp_ecom_old", "10.90.210.32", "d5d75bd7-935e-4057-af25-126a946b321f");
-        addCluster("loong-xjp_ecom_new", "10.90.210.32", "7164b7c1-28f0-4d87-9ed2-6a30bdd706cc");
-        addCluster("loong-xjp_ecom_new_prev", "10.90.210.32", "f0082435-ea66-4662-aead-6935e0d5bd9c");
-        addCluster("loong-xjp_sl_jdp", "10.90.210.32", "sl-jdp");
-        addCluster("loong-xjp_data_platform", "10.90.210.32", "data_platform");
-        addCluster("loong-xjp_ecom_sf", "10.90.210.32", "sl-ecom-sf-prod");
-        addCluster("loong-xjp_ecom_ot", "10.90.210.32", "sl-ecom-ot-prod");
-        addCluster("loong-xjp_slp_product", "10.90.210.32", "slp-product");
-        addCluster("loong-xjp_ecom_webhook", "10.90.210.32", "sl-ecom-new-prod-webhook");
+        addCluster("loong-xjp", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "");
+        addCluster("loong-xjp_prod", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "product");
+        addCluster("loong-xjp_ecom_old", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "d5d75bd7-935e-4057-af25-126a946b321f");
+        addCluster("loong-xjp_ecom_new", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "7164b7c1-28f0-4d87-9ed2-6a30bdd706cc");
+        addCluster("loong-xjp_ecom_new_prev", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "f0082435-ea66-4662-aead-6935e0d5bd9c");
+        addCluster("loong-xjp_sl_jdp", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "sl-jdp");
+        addCluster("loong-xjp_data_platform", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "data_platform");
+        addCluster("loong-xjp_ecom_sf", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "sl-ecom-sf-prod");
+        addCluster("loong-xjp_ecom_ot", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "sl-ecom-ot-prod");
+        addCluster("loong-xjp_slp_product", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "slp-product");
+        addCluster("loong-xjp_ecom_webhook", "k8s-shopline-huloongn-2511f5033a-256c0c292865c47a.elb.ap-southeast-1.amazonaws.com", "sl-ecom-new-prod-webhook");
     }
 
     private void addCluster(String name, String address, String namespace) {
