@@ -37,8 +37,8 @@ public class ClusterTask implements CommandLineRunner {
     public void run(String... args) throws Exception {
         addAllCluster();
 
-        beginAsyncToNacos("nacos-fjny", "loong-fjny");
-        beginAsyncToNacos("nacos-fjny-slp", "loong-fjny-slp");
+        beginAsyncToNacos("loong-fjny", "nacos-fjny");
+        beginAsyncToNacos("loong-fjny-slp", "nacos-fjny-slp");
     }
 
     private void beginAsyncToNacos(String sourceClusterName, String destClusterName) {
@@ -75,11 +75,11 @@ public class ClusterTask implements CommandLineRunner {
     }
 
     private void addAllCluster() {
-        addCluster("nacos-fjny", "10.92.209.4", "product");
-        addCluster("nacos-fjny-slp", "10.92.210.63", "slp-product");
+        addCluster("nacos-fjny", "nacos-fjny-v3-0-27a9de3b376a8cd7.elb.us-east-1.amazonaws.com", "product");
+        addCluster("nacos-fjny-slp", "nacos-fjny-v3-0-27a9de3b376a8cd7.elb.us-east-1.amazonaws.com", "slp-product");
 
-        addCluster("loong-fjny", "10.84.22.69", "product");
-        addCluster("loong-fjny-slp", "10.92.210.181", "slp-product");
+        addCluster("loong-fjny", "k8s-shopline-huloongn-abc368ae5a-cfcda0c61bf5aaef.elb.us-east-1.amazonaws.com", "product");
+        addCluster("loong-fjny-slp", "k8s-shopline-huloongn-abc368ae5a-cfcda0c61bf5aaef.elb.us-east-1.amazonaws.com", "slp-product");
     }
 
     private void addCluster(String name, String address, String namespace) {
