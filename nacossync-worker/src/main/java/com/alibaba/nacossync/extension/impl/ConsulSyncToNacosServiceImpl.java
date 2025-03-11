@@ -172,6 +172,39 @@ public class ConsulSyncToNacosServiceImpl implements SyncService {
                         dest == null ? "" : dest.getClusterName(), taskDO.getServiceName(), groupName, instance.getIp(), instance.getPort());
             }
         }
+
+        for (Map.Entry<String, Boolean> entry : syncedService.entrySet()) {
+            String key = entry.getKey();
+            String[] arr = key.split("@@");
+            if (arr.length != 2) {
+                log.error("consulSyncToNacos key error {}", key);
+                continue;
+            }
+            String ipAndPort = arr[1];
+            arr = ipAndPort.split("_");
+            if (arr.length != 2) {
+                log.error("consulSyncToNacos ipAndPort error {}", ipAndPort);
+                continue;
+            }
+
+            int port;
+            try {
+                port = Integer.parseInt(arr[1]);
+            } catch (Exception e) {
+                log.error("consulSyncToNacos port error {}", ipAndPort);
+                continue;
+            }
+
+            log.info("check-instance-exists ip {} port {}", arr[0], port);
+
+            if (!instanceKeys.contains(composeInstanceKey(arr[0], port))) {
+                syncedService.remove(key);
+                destNamingService.deregisterInstance(taskDO.getServiceName(),
+                        groupName, arr[0], port);
+                log.warn("consul-nacos-diff 检测到同步的节点已不存在，反注册并删除心跳: ip {} port {} task {}",
+                        arr[0], port, JSON.toJSONString(taskDO));
+            }
+        }
     }
 
     private void overrideAllInstance(TaskDO taskDO, NamingService destNamingService,
